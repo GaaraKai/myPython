@@ -94,10 +94,10 @@ if __name__ == '__main__':
     start_time = datetime.datetime.now()
     csv_path = get_csv_path()
     print('csv_path = ', csv_path)
-    data_to_db = csv_reader(csv_path)
-    print(common_log() + '-->>' + 'data_to_db\n', data_to_db)
+    rtn_df = csv_reader(csv_path)
+    print(common_log() + '-->>' + 'rtn_df\n', rtn_df)
     # insert to DB
-    insert_db(data_to_db, tbl_name)
+    # insert_db(rtn_df, tbl_name)
     end_time = datetime.datetime.now()
     print('start_time =', start_time)
     print('end_time   =', end_time)
