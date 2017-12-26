@@ -32,7 +32,11 @@ def get_csv_value(parm_csv_read_result):
     global tbl_name
     if csv_biz_type == 'cs_call':
         # cs_call
-        rst = cs_call.get_cs_call(parm_csv_read_result)
+        rst = cs_call.get_cs_call(parm_csv_read_result)[0]
+        # insert_db
+        print('len(rst[0] = ',len(rst))
+        # print('len(rst[1] = ',len(rst[1]))
+        sys.exit(0)
         tbl_name = 'cs_call'
     elif csv_biz_type == 'cs_warnmgt':
         # cs_warn_mgt
@@ -55,7 +59,8 @@ def get_csv_value(parm_csv_read_result):
 
 def get_csv_path():
     global csv_biz_type
-    default_dir = r"D:\github_program\myPython\docs\csvfiles"  # 设置默认打开目录
+    default_dir = r"C:\Users\Administrator\PycharmProjects\myPython\docs\csvfiles"  # 设置默认打开目录
+    # default_dir = r"D:\github_program\myPython\docs\csvfiles"  # 设置默认打开目录
     file_path = tf.askopenfilename(title=u"选择文件CSV文件", filetypes=[("csv files", "*.csv"), ("all files", "*")],
                                    initialdir=(os.path.expanduser(default_dir)),
                                    initialfile='')

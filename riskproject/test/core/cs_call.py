@@ -6,8 +6,21 @@ import csv
 
 
 # ca_call
-def get_cs_rule():
-    with open('D:/github_program/myPython/docs/conf/cs_call_rule_list.txt', 'r') as opened_file:
+def get_cs_rule(parm_conf_path):
+    """Read Conf Files & Return Call Rule List
+
+     Parameters:
+         None.
+
+     Returns:
+         Type: DataFrame
+         Name: df_rule_list
+
+     Raises:
+         IOError: An error occurred accessing the bigtable.Table object.
+     """
+    with open(parm_conf_path, 'r') \
+            as opened_file:
         csv_read_result = csv.reader(opened_file)
         print(csv_read_result)
         df_rule_list = pd.DataFrame({})
@@ -20,11 +33,26 @@ def get_cs_rule():
     return df_rule_list
 
 def get_cs_call(csv_reader):
+    """Data Preparation from a CSV Files.
+
+     get_cs_rule from a CSV Files..
+
+     Parameters:
+         csv_reader: An open Bigtable Table instance.
+
+     Returns:
+         Type: Two DataFrames
+         Name: 1.df_trx_list
+               2.merge_df_rule_list
+
+     Raises:
+         IOError: An error occurred accessing the bigtable.Table object. ?
+     """
     print(os.path.basename(__file__), sys._getframe().f_code.co_name,
           sys._getframe().f_lineno, 'csv_reader = ', csv_reader)
     df_trx_list = pd.DataFrame({})
     for line in csv_reader:
-        # if 1 < csv_reader.line_num < 40000:
+        # if 1 < csv_reader.line_num < 10:
             for i in range(0, len(line['触发规则'].split(';'))):
                 risk_no = line['风险号']
                 inst_id = line['机构号']
@@ -49,24 +77,26 @@ def get_cs_call(csv_reader):
                 mobile_loc = line['预留手机号归属地']
                 batch_no = time.strftime("%Y%m%d%H%M%S")
                 df_rule_list = pd.DataFrame({'risk_no': [risk_no], 'inst_id': [inst_id], 'inst_trace': [inst_trace] \
-                                      , 'mer_id': [mer_id], 'mer_name': [mer_name], 'prod_id': [prod_id] \
-                                      , 'prod_name': [prod_name], 'order_id': [order_id], 'id_no': [id_no] \
-                                      , 'mobile_no': [mobile_no], 'card_no': [card_no], 'trx_amount': [trx_amount] \
+                                      # , 'mer_id': [mer_id], 'mer_name': [mer_name], 'prod_id': [prod_id] \
+                                      # , 'prod_name': [prod_name], 'order_id': [order_id], 'id_no': [id_no] \
+                                      # , 'mobile_no': [mobile_no], 'card_no': [card_no], 'trx_amount': [trx_amount] \
                                       , 'trx_status': [trx_status], 'rule_no': [rule_no], 'cre_date': [cre_date] \
-                                      , 'cre_time': [cre_time], 'order_ip': [order_ip], 'pay_ip': [pay_ip] \
-                                      , 'order_loc': [order_loc], 'pay_loc': [pay_loc], 'mobile_loc': [mobile_loc] \
+                                      # , 'cre_time': [cre_time], 'order_ip': [order_ip], 'pay_ip': [pay_ip] \
+                                      # , 'order_loc': [order_loc], 'pay_loc': [pay_loc], 'mobile_loc': [mobile_loc] \
                                       , 'batch_no': [batch_no]})
                 df_trx_list = df_trx_list.append(df_rule_list)
     # 1.Get All CA_CALL Transactions as df_trx_list
     df_trx_list.reset_index()
     # print('df_trx_list\n',df_trx_list)
+    # print('len(df_trx_list)\n', len(df_trx_list))
 
     # 2.Drop Duplicated Transactions by 'inst_trace' & 'rule_no'
-    df_trx_list= df_trx_list.drop_duplicates(['inst_trace','rule_no'])
+    df_trx_list= df_trx_list.drop_duplicates(subset=['inst_trace','rule_no'],keep='first')
     # print('df_trx_list drop_duplicates\n', df_trx_list)
+    # print('len(df_trx_list11111)\n', len(df_trx_list))
 
     # 3. Get CS_CALL Rules as df_cs_rule
-    df_cs_rule = get_cs_rule()
+    df_cs_rule = get_cs_rule(conf_path)
     # print('df_cs_rule\n', df_cs_rule)
 
     # 4. Merge df_trx_list & df_cs_rule to get REAL CA_CALL Transactions
@@ -74,5 +104,15 @@ def get_cs_call(csv_reader):
                         right=df_cs_rule,how='inner',
                         left_on='rule_no',
                         right_on='rule_no')
-    return merge_df_rule_list
+    print('len(df_trx_list) = ',len(df_trx_list))
+    print('len(merge_df_rule_list) = ',len(merge_df_rule_list))
+    return df_trx_list, merge_df_rule_list
 
+
+# 当前文件的路径
+pyfile_path = os.getcwd()
+# 当前文件的父路径
+father_path = os.path.abspath(os.path.dirname(pyfile_path) + os.path.sep + ".")
+# 配置文件路径
+conf_path = os.path.abspath(os.path.dirname(father_path) + os.path.sep + "..") \
+            + '\\docs\\conf\\cs_call_rule_list.txt'
