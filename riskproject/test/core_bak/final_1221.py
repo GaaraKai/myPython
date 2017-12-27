@@ -9,13 +9,13 @@ import tkinter.filedialog as tf
 import tkinter.messagebox
 import traceback
 
+import ds_cap_rate
 import pandas as pd
 import sqlalchemy as sq
 
 import cs_call
 import cs_warn_mgt
-import ds_cap_rate
-import ds_recg_rate
+from riskproject.test.core_bak import ds_recg_rate
 
 
 def csv_reader(parm_csv_path):

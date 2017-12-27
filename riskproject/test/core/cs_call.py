@@ -41,9 +41,9 @@ def get_cs_call(csv_reader):
          csv_reader: An open Bigtable Table instance.
 
      Returns:
-         Type: Two DataFrames
-         Name: 1.df_trx_list
-               2.merge_df_rule_list
+         Transactions which Fire CS_CALL rules
+         Type: DataFrame
+         Name: merge_df_rule_list
 
      Raises:
          IOError: An error occurred accessing the bigtable.Table object. ?
@@ -77,12 +77,12 @@ def get_cs_call(csv_reader):
                 mobile_loc = line['预留手机号归属地']
                 batch_no = time.strftime("%Y%m%d%H%M%S")
                 df_rule_list = pd.DataFrame({'risk_no': [risk_no], 'inst_id': [inst_id], 'inst_trace': [inst_trace] \
-                                      # , 'mer_id': [mer_id], 'mer_name': [mer_name], 'prod_id': [prod_id] \
-                                      # , 'prod_name': [prod_name], 'order_id': [order_id], 'id_no': [id_no] \
-                                      # , 'mobile_no': [mobile_no], 'card_no': [card_no], 'trx_amount': [trx_amount] \
+                                      , 'mer_id': [mer_id], 'mer_name': [mer_name], 'prod_id': [prod_id] \
+                                      , 'prod_name': [prod_name], 'order_id': [order_id], 'id_no': [id_no] \
+                                      , 'mobile_no': [mobile_no], 'card_no': [card_no], 'trx_amount': [trx_amount] \
                                       , 'trx_status': [trx_status], 'rule_no': [rule_no], 'cre_date': [cre_date] \
-                                      # , 'cre_time': [cre_time], 'order_ip': [order_ip], 'pay_ip': [pay_ip] \
-                                      # , 'order_loc': [order_loc], 'pay_loc': [pay_loc], 'mobile_loc': [mobile_loc] \
+                                      , 'cre_time': [cre_time], 'order_ip': [order_ip], 'pay_ip': [pay_ip] \
+                                      , 'order_loc': [order_loc], 'pay_loc': [pay_loc], 'mobile_loc': [mobile_loc] \
                                       , 'batch_no': [batch_no]})
                 df_trx_list = df_trx_list.append(df_rule_list)
     # 1.Get All CA_CALL Transactions as df_trx_list
@@ -106,7 +106,7 @@ def get_cs_call(csv_reader):
                         right_on='rule_no')
     print('len(df_trx_list) = ',len(df_trx_list))
     print('len(merge_df_rule_list) = ',len(merge_df_rule_list))
-    return df_trx_list, merge_df_rule_list
+    return merge_df_rule_list
 
 
 # 当前文件的路径
@@ -116,3 +116,4 @@ father_path = os.path.abspath(os.path.dirname(pyfile_path) + os.path.sep + ".")
 # 配置文件路径
 conf_path = os.path.abspath(os.path.dirname(father_path) + os.path.sep + "..") \
             + '\\docs\\conf\\cs_call_rule_list.txt'
+CW = 'wang'

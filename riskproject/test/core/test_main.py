@@ -14,8 +14,9 @@ import sqlalchemy as sq
 
 import cs_call
 import cs_warn_mgt
-import ds_cap_rate
-import ds_recg_rate
+import docs.conf.conf as conf
+# import ds_recg_rate
+import ds_stat
 
 
 def csv_reader(parm_csv_path):
@@ -30,37 +31,44 @@ def csv_reader(parm_csv_path):
 def get_csv_value(parm_csv_read_result):
     # rst = pd.DataFrame({})
     global tbl_name
-    if csv_biz_type == 'cs_call':
+    if csv_biz_type == conf.CS:
         # cs_call
-        rst = cs_call.get_cs_call(parm_csv_read_result)[0]
+        rst = cs_call.get_cs_call(parm_csv_read_result)
         # insert_db
-        print('len(rst[0] = ',len(rst))
-        # print('len(rst[1] = ',len(rst[1]))
-        sys.exit(0)
         tbl_name = 'cs_call'
-    elif csv_biz_type == 'cs_warnmgt':
+        insert_db(rst, tbl_name)
+    elif csv_biz_type == conf.CW:
         # cs_warn_mgt
         rst = cs_warn_mgt.get_cs_warn_mgt(parm_csv_read_result)
         tbl_name = 'cs_warn_mgt'
-    elif csv_biz_type == 'ds_caprate':
-        # ds_cap_rate
-        rst = ds_cap_rate.get_ds_cap_rate(parm_csv_read_result)
+        insert_db(rst, tbl_name)
+    elif csv_biz_type == conf.DS:
+        cap_rst = ds_stat.get_ds_cap_rate(parm_csv_read_result)
         tbl_name = 'ds_cap_rate'
-    elif csv_biz_type == 'ds_recgrate':
-        # ds_recg_rate
-        rst = ds_recg_rate.get_ds_recg_rate(parm_csv_read_result)
+        insert_db(cap_rst, tbl_name)
+        recg_rst = ds_stat.get_ds_recg_rate(parm_csv_read_result)
         tbl_name = 'ds_recg_rate'
+        insert_db(recg_rst, tbl_name)
+    # elif csv_biz_type == 'ds_caprate':
+    #     # ds_cap_rate
+    #     rst = ds_cap_rate.get_ds_cap_rate(parm_csv_read_result)
+    #     tbl_name = 'ds_cap_rate'
+    #     insert_db(rst, tbl_name)
+    # elif csv_biz_type == 'ds_recgrate':
+    #     # ds_recg_rate
+    #     rst = ds_recg_rate.get_ds_recg_rate(parm_csv_read_result)
+    #     tbl_name = 'ds_recg_rate'
     else:
         error_msg = tkinter.messagebox.showinfo(title='提示', message='处理类型有误，请重新选择')
         print('csv_biz_type error -->> ', csv_biz_type)
         sys.exit(0)
-    return rst
+    # return rst
 
 
 def get_csv_path():
     global csv_biz_type
-    default_dir = r"C:\Users\Administrator\PycharmProjects\myPython\docs\csvfiles"  # 设置默认打开目录
-    # default_dir = r"D:\github_program\myPython\docs\csvfiles"  # 设置默认打开目录
+    # default_dir = r"C:\Users\Administrator\PycharmProjects\myPython\docs\csvfiles"  # 设置默认打开目录
+    default_dir = r"D:\github_program\myPython\docs\csvfiles\cs_call"  # 设置默认打开目录
     file_path = tf.askopenfilename(title=u"选择文件CSV文件", filetypes=[("csv files", "*.csv"), ("all files", "*")],
                                    initialdir=(os.path.expanduser(default_dir)),
                                    initialfile='')
@@ -80,8 +88,8 @@ def init():
 
 
 def insert_db(parm_df, parm_table):
-    print('original parm_df ==>> \n ', parm_df)
-    print('target table name = ', parm_table)
+    print(common_log() + '-->>' + 'original parm_df ==>> \n ', parm_df)
+    print(common_log() + '-->>' + 'target table name = ', parm_table)
     engine = sq.create_engine('mysql+pymysql://root:root@127.0.0.1:3306/rcdb?charset=utf8', echo=True, encoding='utf-8')
     try:
         parm_df.to_sql(name=parm_table, con=engine, if_exists='append', index=False, index_label=False)
@@ -99,8 +107,7 @@ if __name__ == '__main__':
     start_time = datetime.datetime.now()
     csv_path = get_csv_path()
     print('csv_path = ', csv_path)
-    rtn_df = csv_reader(csv_path)
-    print(common_log() + '-->>' + 'rtn_df\n', rtn_df)
+    csv_reader(csv_path)
     # insert to DB
     # insert_db(rtn_df, tbl_name)
     end_time = datetime.datetime.now()

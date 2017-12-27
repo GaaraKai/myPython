@@ -40,7 +40,7 @@ if __name__ == '__main__':
     start_time = datetime.datetime.now()
     # 当前文件的路径
     file_path = os.getcwd()
-    csv_path = r'E:\SVN文档数据\08_产品风控\11.大型项目\05.自研风控核心\验收对比\csv\ZY_1224.csv'
+    csv_path = r'E:\SVN文档数据\08_产品风控\11.大型项目\05.自研风控核心\验收对比\csv\BS_1226.csv'
     class_type = csv_path.split('\\')[-1].split('.')[0].split('_')[0]
     print('class_type = ',class_type)
     date = '2017'+csv_path.split('\\')[-1].split('.')[0].split('_')[-1]
