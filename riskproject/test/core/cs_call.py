@@ -5,51 +5,50 @@ import sys
 import csv
 
 
-# ca_call
 def get_cs_rule(parm_conf_path):
-    """Read Conf Files & Return Call Rule List
+    """
+    Read Conf Files & Return Call Rule List
 
-     Parameters:
-         None.
+    Parameters:
+    None.
 
-     Returns:
-         Type: DataFrame
-         Name: df_rule_list
+    Returns:
+    Type: DataFrame
+    Name: df_rule_list
 
-     Raises:
-         IOError: An error occurred accessing the bigtable.Table object.
-     """
-    with open(parm_conf_path, 'r') \
-            as opened_file:
-        csv_read_result = csv.reader(opened_file)
-        print(csv_read_result)
-        df_rule_list = pd.DataFrame({})
-        for line in csv_read_result:
-            for i in range(0, len(line)):
-                risk_no = line[i]
-                df_rule = pd.DataFrame({'rule_no': [risk_no]})
-                df_rule_list = df_rule_list.append(df_rule)
-        df_rule_list.reset_index()
+    Raises:
+    IOError: An error occurred accessing the bigtable.Table object.
+    """
+    opened_file =open(parm_conf_path, 'r')
+    csv_read_result = csv.reader(opened_file)
+    print(csv_read_result)
+    df_rule_list = pd.DataFrame({})
+    for line in csv_read_result:
+        for i in range(0, len(line)):
+            risk_no = line[i]
+            df_rule = pd.DataFrame({'rule_no': [risk_no]})
+            df_rule_list = df_rule_list.append(df_rule)
+    df_rule_list.reset_index()
     return df_rule_list
 
 def get_cs_call(csv_reader):
-    """Data Preparation from a CSV Files.
+    """
+    Data Preparation from a CSV Files.
 
-     get_cs_rule from a CSV Files..
+        get_cs_rule from a CSV Files..
 
-     Parameters:
-         csv_reader: An open Bigtable Table instance.
+    Parameters:
+        csv_reader: An open Bigtable Table instance.
 
-     Returns:
-         Transactions which Fire CS_CALL rules
-         Type: DataFrame
-         Name: merge_df_rule_list
+    Returns:
+        Transactions which Fire CS_CALL rules
+        Type: DataFrame
+        Na  me: merge_df_rule_list
 
-     Raises:
-         IOError: An error occurred accessing the bigtable.Table object. ?
-     """
-    print(os.path.basename(__file__), sys._getframe().f_code.co_name,
-          sys._getframe().f_lineno, 'csv_reader = ', csv_reader)
+    Raises:
+        IOError: An error occurred accessing the bigtable.Table object. ?
+    """
+    print(os.path.basename(__file__), sys._getframe().f_code.co_name, sys._getframe().f_lineno)
     df_trx_list = pd.DataFrame({})
     for line in csv_reader:
         # if 1 < csv_reader.line_num < 10:
@@ -88,7 +87,6 @@ def get_cs_call(csv_reader):
     # 1.Get All CA_CALL Transactions as df_trx_list
     df_trx_list.reset_index()
     # print('df_trx_list\n',df_trx_list)
-    # print('len(df_trx_list)\n', len(df_trx_list))
 
     # 2.Drop Duplicated Transactions by 'inst_trace' & 'rule_no'
     df_trx_list= df_trx_list.drop_duplicates(subset=['inst_trace','rule_no'],keep='first')
@@ -104,8 +102,6 @@ def get_cs_call(csv_reader):
                         right=df_cs_rule,how='inner',
                         left_on='rule_no',
                         right_on='rule_no')
-    print('len(df_trx_list) = ',len(df_trx_list))
-    print('len(merge_df_rule_list) = ',len(merge_df_rule_list))
     return merge_df_rule_list
 
 
@@ -116,4 +112,3 @@ father_path = os.path.abspath(os.path.dirname(pyfile_path) + os.path.sep + ".")
 # 配置文件路径
 conf_path = os.path.abspath(os.path.dirname(father_path) + os.path.sep + "..") \
             + '\\docs\\conf\\cs_call_rule_list.txt'
-CW = 'wang'

@@ -54,11 +54,14 @@ def get_ds_cap_rate(csv_reader):
 
     return merge_td_zy
 
+
 def get_ds_recg_rate(csv_reader):
-    print(os.path.basename(__file__), sys._getframe().f_code.co_name,
-          sys._getframe().f_lineno, 'csv_reader = ', csv_reader)
+    # print(os.path.basename(__file__), sys._getframe().f_code.co_name,
+    #       sys._getframe().f_lineno, 'csv_reader = ', csv_reader)
     df_filtered_trx = pd.DataFrame({})
     for line in csv_reader:
+            # print(11)
+            # print('11 = ',len(line))
         # if 1 < csv_reader.line_num < 100000:
             inst_trace = line['机构请求流水']
             order_date = line['商户订单日期']
@@ -74,9 +77,12 @@ def get_ds_recg_rate(csv_reader):
                                              'td_device': [td_device], 'zy_device': [zy_device]})
                 df_filtered_trx = df_filtered_trx.append(filtered_trx)
     df_filtered_trx = df_filtered_trx.reset_index()
-    # print('df_filtered_trx\n', df_filtered_trx)
+    print('df_filtered_trx\n', df_filtered_trx)
+
+    # sys.exit(0)
 
     # 2.Get PRODUCT_ID, START_DATE, END_DATE
+    print('123123123123 = ',df_filtered_trx)
     rtn_prod_id = df_filtered_trx.iloc[0]['prod_id']
     df_filtered_trx_sort = df_filtered_trx.sort_values(by=['order_date'], ascending=[True])
     # print('df_filtered_trx_sort\n', df_filtered_trx_sort)

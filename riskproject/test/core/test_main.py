@@ -8,67 +8,53 @@ import sys
 import tkinter.filedialog as tf
 import tkinter.messagebox
 import traceback
-
-import pandas as pd
 import sqlalchemy as sq
 
 import cs_call
 import cs_warn_mgt
-import docs.conf.conf as conf
-# import ds_recg_rate
 import ds_stat
+import docs.conf.conf as conf
 
 
-def csv_reader(parm_csv_path):
-    df_to_db = pd.DataFrame({})
-    with open(parm_csv_path, 'r') as opened_file:
-        csv_read_result = csv.DictReader(opened_file)
-        df_to_db = get_csv_value(csv_read_result)
-    # print('df_to_db\n', df_to_db)
-    return df_to_db
+def get_csv_dict(parm_path):
+    return csv.DictReader(open(parm_path, 'r'))
 
 
-def get_csv_value(parm_csv_read_result):
-    # rst = pd.DataFrame({})
-    global tbl_name
-    if csv_biz_type == conf.CS:
-        # cs_call
-        rst = cs_call.get_cs_call(parm_csv_read_result)
-        # insert_db
-        tbl_name = 'cs_call'
-        insert_db(rst, tbl_name)
-    elif csv_biz_type == conf.CW:
-        # cs_warn_mgt
-        rst = cs_warn_mgt.get_cs_warn_mgt(parm_csv_read_result)
-        tbl_name = 'cs_warn_mgt'
-        insert_db(rst, tbl_name)
-    elif csv_biz_type == conf.DS:
-        cap_rst = ds_stat.get_ds_cap_rate(parm_csv_read_result)
-        tbl_name = 'ds_cap_rate'
-        insert_db(cap_rst, tbl_name)
-        recg_rst = ds_stat.get_ds_recg_rate(parm_csv_read_result)
-        tbl_name = 'ds_recg_rate'
-        insert_db(recg_rst, tbl_name)
-    # elif csv_biz_type == 'ds_caprate':
-    #     # ds_cap_rate
-    #     rst = ds_cap_rate.get_ds_cap_rate(parm_csv_read_result)
-    #     tbl_name = 'ds_cap_rate'
-    #     insert_db(rst, tbl_name)
-    # elif csv_biz_type == 'ds_recgrate':
-    #     # ds_recg_rate
-    #     rst = ds_recg_rate.get_ds_recg_rate(parm_csv_read_result)
-    #     tbl_name = 'ds_recg_rate'
+def data_process(parm_csv_path):
+    """
+    Data Preparation From CSV File & Insert into DB
+
+    Parameters:
+      parm_csv_path: CSV file path
+
+    Returns:
+      None
+
+    Raises:
+      IOError: An error occurred accessing the bigtable.Table object.
+    """
+    if csv_biz_type == conf.CS:  # cs_call
+        rst = cs_call.get_cs_call(get_csv_dict(parm_csv_path))
+        insert_db(rst, 'cs_call')
+    elif csv_biz_type == conf.CW:  # cs_warn_mgt
+        rst = cs_warn_mgt.get_cs_warn_mgt(get_csv_dict(parm_csv_path))
+        insert_db(rst, 'cs_warn_mgt')
+    elif csv_biz_type == conf.DS:  # ds_cap_rate & ds_recg_rate
+        cap_rst = ds_stat.get_ds_cap_rate(get_csv_dict(parm_csv_path))
+        recg_rst = ds_stat.get_ds_recg_rate(get_csv_dict(parm_csv_path))
+        insert_db(cap_rst, 'ds_cap_rate')
+        insert_db(recg_rst, 'ds_recg_rate')
     else:
-        error_msg = tkinter.messagebox.showinfo(title='提示', message='处理类型有误，请重新选择')
+        tkinter.messagebox.showinfo(title='提示', message='处理类型有误，请重新选择')
         print('csv_biz_type error -->> ', csv_biz_type)
         sys.exit(0)
-    # return rst
 
 
 def get_csv_path():
     global csv_biz_type
-    # default_dir = r"C:\Users\Administrator\PycharmProjects\myPython\docs\csvfiles"  # 设置默认打开目录
-    default_dir = r"D:\github_program\myPython\docs\csvfiles\cs_call"  # 设置默认打开目录
+    father_path = os.path.abspath(os.path.dirname(os.getcwd()) + os.path.sep + ".")
+    default_dir = os.path.abspath(os.path.dirname(father_path) + os.path.sep + "..") \
+                + '\\docs\\csvfiles\\'
     file_path = tf.askopenfilename(title=u"选择文件CSV文件", filetypes=[("csv files", "*.csv"), ("all files", "*")],
                                    initialdir=(os.path.expanduser(default_dir)),
                                    initialfile='')
@@ -107,10 +93,9 @@ if __name__ == '__main__':
     start_time = datetime.datetime.now()
     csv_path = get_csv_path()
     print('csv_path = ', csv_path)
-    csv_reader(csv_path)
-    # insert to DB
-    # insert_db(rtn_df, tbl_name)
+    data_process(csv_path)
     end_time = datetime.datetime.now()
     print('start_time =', start_time)
     print('end_time   =', end_time)
     print('diff_Time =', end_time - start_time)
+    print('System Processing Done...')
