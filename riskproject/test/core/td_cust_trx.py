@@ -16,7 +16,7 @@ def get_mer_name(param_str):
     return param_str[param_str.index('(')+1:-1]
 
 
-def get_trx_detail(csv_reader):
+def get_cust_trx_hist(csv_reader):
     print(os.path.basename(__file__), sys._getframe().f_code.co_name, sys._getframe().f_lineno)
     rtn_df = pd.DataFrame({})
     # qwe=csv.reader(open('D:/github_program/myPython/docs/csvfiles/ds_stat/171218095044__P14M000K.csv','r'))
@@ -113,4 +113,4 @@ def get_trx_detail(csv_reader):
 # parm_path = r"D:/github_program/myPython/docs/csvfiles/ds_stat/171218095044__P14M000K.csv"
 # path = csv.DictReader(open(parm_path, 'r'))
 #
-# get_trx_detail(path)
+# get_cust_trx_hist(path)
