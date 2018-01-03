@@ -11,7 +11,7 @@ def get_cs_warn_mgt(csv_reader):
           sys._getframe().f_lineno, 'csv_reader = ', csv_reader)
     df_append = pd.DataFrame({})
     for line in csv_reader:
-        if 1 < csv_reader.line_num < 4:
+        # if 1 < csv_reader.line_num < 4:
             # cs_warn_mgt
             risk_no = line['风险号']
             mer_id = line['商户号']

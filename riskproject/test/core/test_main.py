@@ -13,6 +13,7 @@ import sqlalchemy as sq
 import cs_call
 import cs_warn_mgt
 import ds_stat
+import td_trx_detail
 import docs.conf.conf as conf
 
 
@@ -39,9 +40,11 @@ def data_process(parm_csv_path):
     elif csv_biz_type == conf.CW:  # cs_warn_mgt
         rst = cs_warn_mgt.get_cs_warn_mgt(get_csv_dict(parm_csv_path))
         insert_db(rst, 'cs_warn_mgt')
-    elif csv_biz_type == conf.DS:  # ds_cap_rate & ds_recg_rate
+    elif csv_biz_type == conf.DS:  # rc_trx_detail & ds_cap_rate & ds_recg_rate
+        trx_rst = td_trx_detail.get_trx_detail(get_csv_dict(parm_csv_path))
         cap_rst = ds_stat.get_ds_cap_rate(get_csv_dict(parm_csv_path))
         recg_rst = ds_stat.get_ds_recg_rate(get_csv_dict(parm_csv_path))
+        insert_db(trx_rst, 'rc_trx_detail')
         insert_db(cap_rst, 'ds_cap_rate')
         insert_db(recg_rst, 'ds_recg_rate')
     else:
