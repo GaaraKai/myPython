@@ -57,8 +57,8 @@ def get_ds_cap_rate(csv_reader):
 
 
 def get_ds_recg_rate(csv_reader):
-    # print(os.path.basename(__file__), sys._getframe().f_code.co_name,
-    #       sys._getframe().f_lineno, 'csv_reader = ', csv_reader)
+    print(os.path.basename(__file__), sys._getframe().f_code.co_name,
+          sys._getframe().f_lineno, 'csv_reader = ', csv_reader)
     df_filtered_trx = pd.DataFrame({})
     for line in csv_reader:
         # if 1 < csv_reader.line_num < 100000:
@@ -76,7 +76,7 @@ def get_ds_recg_rate(csv_reader):
                                                  'td_device': [td_device], 'zy_device': [zy_device]})
                     df_filtered_trx = df_filtered_trx.append(filtered_trx)
     df_filtered_trx = df_filtered_trx.reset_index()
-    print('df_filtered_trx\n', df_filtered_trx)
+    # print('df_filtered_trx\n', df_filtered_trx)
 
     # 2.Get PRODUCT_ID, START_DATE, END_DATE
     rtn_prod_id = df_filtered_trx.iloc[0]['prod_id']
@@ -110,7 +110,6 @@ def get_ds_recg_rate(csv_reader):
     nodup_td_di_cnt = len(td_di.drop_duplicates(['td_device']))
 
     # 6. Concatenate Return DataDataFrame ==>> rtn_df
-    print('rtn_prod_id = ', rtn_prod_id)
     print('dup_zy_di_cnt = ', dup_zy_di_cnt)
     print('nodup_td_di_cnt = ', nodup_td_di_cnt)
 
@@ -120,6 +119,6 @@ def get_ds_recg_rate(csv_reader):
                            'td_recg_cnt': [nodup_td_di_cnt],
                            'batch_no': time.strftime("%Y%m%d%H%M%S")}, index=None)
 
-    print('rtn_df\n', rtn_df)
+    # print('rtn_df\n', rtn_df)
 
     return rtn_df

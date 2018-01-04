@@ -106,7 +106,7 @@ def get_cust_trx_hist(csv_reader):
             rtn_df = rtn_df.append(df_trx_detail)
     # Get All Transactions as rtn_df
     rtn_df.reset_index()
-    print('rtn_df \n', rtn_df)
+    # print('rtn_df \n', rtn_df)
     return rtn_df
 
 #
