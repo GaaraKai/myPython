@@ -135,7 +135,6 @@ def get_cs_call(parm_csv_floder, parm_csv_file_list):
         print('merge_df_rule_list =', merge_df_rule_list.iloc[:, 0].size)
         print('merge_df_rule_list \n', merge_df_rule_list)
         rst = rst.append(merge_df_rule_list, ignore_index=True)
-    print('111111\n',rst)
     print('rst =', rst.iloc[:, 0].size)
     return rst
 

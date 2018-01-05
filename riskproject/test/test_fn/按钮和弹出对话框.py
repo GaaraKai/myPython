@@ -1,6 +1,7 @@
 from tkinter import *
 import tkinter.filedialog
 root = Tk()
+import tkinter.messagebox as tm
 
 def xz():
     filenames = tkinter.filedialog.askopenfilenames()
@@ -13,8 +14,11 @@ def xz():
     else:
         lb.config(text = "您没有选择任何文件");
 
-lb = Label(root,text = '')
-lb.pack()
-btn = Button(root,text="弹出选择文件对话框",command=xz)
-btn.pack()
-root.mainloop()
+# lb = Label(root,text = '')
+# lb.pack()
+# btn = Button(root,text="弹出选择文件对话框",command=xz)
+# btn.pack()
+# root.mainloop()
+
+x= tm.showinfo('123123','22')
+
