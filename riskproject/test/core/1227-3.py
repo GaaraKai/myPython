@@ -5,6 +5,11 @@ def get_value():
     df1 = pd.DataFrame({"A":[1,2,3,4],"B":[5,6,7,8],"C":[1,1,1,1]})
     df2 = pd.DataFrame({"A":[11,222,333,444],"B":[555,6,6677,8],"C":[18,1,5671,1]})
     print('df1\n', df1)
+
+
+
+
+
     print('df1\n',df1.iloc[0:1])
     # sys.exit(0)
     # print('df2\n', df2.iloc[:,0].size)

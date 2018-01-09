@@ -1,13 +1,26 @@
+# - coding: utf-8 -
+
 import csv
 import datetime
 import time
 import pandas as pd
+import sys
+import sqlalchemy as sq
+import traceback
 
+def insert_db(parm_df, parm_table):
 
-a =open('D:/github_program/myPython/docs/csvfiles/ds_stat/180102102553__P14M0000-1225-1227.csv','r')
-csv_read = csv.reader(open('D:/github_program/myPython/docs/csvfiles/ds_stat/180102102553__P14M0000-1225-1227.csv','r'))
-csv_dict = csv.DictReader(open('D:/github_program/myPython/docs/csvfiles/ds_stat/180102102553__P14M0000-1225-1227.csv', 'r'))
-
+    engine = sq.create_engine('mysql+pymysql://root:root@127.0.0.1:3306/rcdb?charset=utf8',
+                              echo=True,
+                              encoding='utf-8')
+    try:
+        parm_df.to_sql(name=parm_table, con=engine, if_exists='append', index=False, index_label=False)
+        print('DataBase Processing Success...')
+    except:
+        print("DataBase Processing Error...")
+        # tm.showinfo(title='错误提示', message='数据库操作出现错误')
+        traceback.print_exc()
+        sys.exit(0)
 
 
 def get_mer_id(param_str):
@@ -186,8 +199,62 @@ def fn2(parm_csv_dict):
 
 cnt = 10000
 start_time = datetime.datetime.now()
-fn1(csv_dict)
+# fn1(csv_dict)
 # fn2(csv_read)
+
+
+file = 'D:/github_program/myPython/docs/csvfiles/ds_stat/180102102553__P14M0000-1225-1227.csv'
+# file = 'D:/github_program/myPython/docs/csvfiles/ds_stat/180102102033__P1311000.csv'
+
+
+# file = 'D:/github_program/myPython/docs/csvfiles/ds_stat/123.csv'
+# a =open(file,'r')
+# print(a)
+# obj = pd.read_csv(file,encoding='gbk',iterator=True,chunksize=5)
+# # print(obj)
+#
+# chunk = obj.get_chunk(5)
+# print(chunk)
+# reader = pd.read_csv(file,encoding='gbk')
+# print(reader.iloc[:,0].size)
+# sys.exit(0)
+reader = pd.read_csv(file,encoding='gbk',chunksize=5000,iterator=True,dtype=str)
+total = pd.DataFrame({})
+list = []
+x= pd.DataFrame({})
+for chunk in reader:
+    x = chunk[['机构号'
+                ,'机构请求流水'
+                ,'内部订单号'
+                ,'商户订单号'
+                ,'商户订单日期'
+                ,'主商户号'
+                ,'同盾设备指纹'
+                ,'自研设备指纹'
+                ,'扣款(元)'
+                ,'支付日期'
+                ,'平台日期'
+                ,'平台时间'
+                ,'卡类型'
+                ,'交易状态'
+                ,'手机号'
+                ,'收款方卡号'
+                ,'收款方姓名/公司名称'
+                ,'支付产品编号'
+                ,'支付产品编号'
+                ,'发卡行'
+                ,'银行通道编号'
+                ,'银行返回流水'
+                ,'返回码'
+                ,'用户支付IP归属地' ]]
+
+    total = total.append(x)
+    # for row in chunk:
+    #     print(row)
+    # print(chunk)
+print('total\n',total)
+
+insert_db(total, 'td_cust_trx_hist')
 
 end_time = datetime.datetime.now()
 print('start_time =', start_time)
