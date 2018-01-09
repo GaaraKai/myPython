@@ -4,6 +4,15 @@ import os
 import sys
 
 
+def asd(row):
+    age = row['支付产品编号']
+    print(age)
+    if pd.isnull(age):
+        pass
+    else:
+        return age[0:8]
+
+
 def get_mer_id(param_str):
     return param_str[0:param_str.index('(')]
 
@@ -52,17 +61,24 @@ def get_trx_detail(parm_reader):
             , '用户支付IP归属地'
             , '预留手机号归属地']]
         rtn_df = rtn_df.append(x)
+
+        print('------------------')
+        prod_id_list = chunk.apply(asd, axis=1)
+        rtn_df["prod_id"] = prod_id_list
+        print('------------------')
+
+
         for i in chunk['主商户号']:
             mer_id = get_mer_id(i)
             mer_name = get_mer_name(i)
             mer_id_list.append(mer_id)
             mer_name_list.append(mer_name)
         for i in chunk['支付产品编号']:
-            prod_id_list.append(i[0:8])
+            # prod_id_list.append(i[0:8])
             prod_name_list.append(i[9:-1])
         rtn_df["mer_id"] = mer_id_list
         rtn_df["mer_name"] = mer_name_list
-        rtn_df["prod_id"] = prod_id_list
+        # rtn_df["prod_id"] = prod_id_list
         rtn_df["prod_name"] = prod_name_list
         rtn_df["batch_no"] = time.strftime("%Y%m%d%H%M%S")
 
