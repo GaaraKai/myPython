@@ -86,11 +86,11 @@ def main_process(parm_csv_floder):
         cs_warnmgt_rst = cs_warn_mgt.get_cs_warn_mgt(csv_floder, csv_file_list)
         insert_db(cs_warnmgt_rst, 'cs_warn_mgt')
     elif csv_biz_type == conf.DS:  # td_cust_trx_hist & ds_cap_rate & ds_recg_rate
-        trx_rst = td_cust_trx.get_cust_trx_hist(csv_floder, csv_file_list)
-        # cap_rst = ds_stat.get_ds_cap_rate(csv_floder, csv_file_list)
+        # trx_rst = td_cust_trx.get_cust_trx_hist(csv_floder, csv_file_list)
+        cap_rst = ds_stat.get_ds_cap_rate(csv_floder, csv_file_list)
         # recg_rst = ds_stat.get_ds_recg_rate(csv_floder, csv_file_list)
-        insert_db(trx_rst, 'td_cust_trx_hist')
-        # insert_db(cap_rst, 'ds_cap_rate')
+        # insert_db(trx_rst, 'td_cust_trx_hist')
+        insert_db(cap_rst, 'ds_cap_rate')
         # insert_db(recg_rst, 'ds_recg_rate')
     print('Main Processing Have Done...')
 

@@ -4,21 +4,34 @@ import os
 import sys
 
 
-def asd(row):
-    age = row['支付产品编号']
-    print(age)
-    if pd.isnull(age):
+def get_prod_id(row):
+    a = row['支付产品编号']
+    if pd.isnull(a):
         pass
     else:
-        return age[0:8]
+        return a[0:8]
+
+def get_prod_name(row):
+    x = row['支付产品编号']
+    if pd.isnull(x):
+        pass
+    else:
+        return x[9:-1]
 
 
-def get_mer_id(param_str):
-    return param_str[0:param_str.index('(')]
+def get_mer_id(row):
+    x = row['主商户号']
+    if pd.isnull(x):
+        pass
+    else:
+        return x[0:x.index('(')]
 
-
-def get_mer_name(param_str):
-    return param_str[param_str.index('(') + 1:-1]
+def get_mer_name(row):
+    x = row['主商户号']
+    if pd.isnull(x):
+        pass
+    else:
+        return x[x.index('(') + 1:-1]
 
 
 def get_trx_detail(parm_reader):
@@ -28,9 +41,11 @@ def get_trx_detail(parm_reader):
     mer_name_list = []
     prod_id_list = []
     prod_name_list = []
+    prod_id = pd.Series()
+    prod_name = pd.Series()
+    mer_id = pd.Series()
+    mer_name = pd.Series()
     for chunk in parm_reader:
-        print(chunk.head())
-        # sys.exit(0)
         x = chunk[['机构号'
             , '机构请求流水'
             , '内部订单号'
@@ -62,25 +77,35 @@ def get_trx_detail(parm_reader):
             , '预留手机号归属地']]
         rtn_df = rtn_df.append(x)
 
-        print('------------------')
-        prod_id_list = chunk.apply(asd, axis=1)
-        rtn_df["prod_id"] = prod_id_list
-        print('------------------')
+        # NEW FUNCTION
+        prod_id_list = chunk.apply(get_prod_id, axis=1)
+        prod_name_list = chunk.apply(get_prod_name, axis=1)
+        mer_id_list = chunk.apply(get_mer_id, axis=1)
+        mer_name_list = chunk.apply(get_mer_name, axis=1)
+        # print('prod_id_list \n ',prod_id_list)
+        prod_id = prod_id.append(prod_id_list)
+        prod_name = prod_name.append(prod_name_list)
+        mer_id = mer_id.append(mer_id_list)
+        mer_name = mer_name.append(mer_name_list)
+        rtn_df["prod_id"] = prod_id
+        rtn_df["prod_name"] = prod_name
+        rtn_df["mer_id"] = mer_id
+        rtn_df["mer_name"] = mer_name
+        #
 
-
-        for i in chunk['主商户号']:
-            mer_id = get_mer_id(i)
-            mer_name = get_mer_name(i)
-            mer_id_list.append(mer_id)
-            mer_name_list.append(mer_name)
-        for i in chunk['支付产品编号']:
-            # prod_id_list.append(i[0:8])
-            prod_name_list.append(i[9:-1])
-        rtn_df["mer_id"] = mer_id_list
-        rtn_df["mer_name"] = mer_name_list
+        # OLD FUNCTION
+        # for i in chunk['主商户号']:
+        #     mer_id = get_mer_id(i)
+        #     mer_name = get_mer_name(i)
+        #     mer_id_list.append(mer_id)
+        #     mer_name_list.append(mer_name)
+        # for i in chunk['支付产品编号']:
+        #     prod_id_list.append(i[0:8])
+        #     prod_name_list.append(i[9:-1])
+        # rtn_df["mer_id"] = mer_id_list
+        # rtn_df["mer_name"] = mer_name_list
         # rtn_df["prod_id"] = prod_id_list
-        rtn_df["prod_name"] = prod_name_list
-        rtn_df["batch_no"] = time.strftime("%Y%m%d%H%M%S")
+        # rtn_df["prod_name"] = prod_name_list
 
     rtn_df.rename(columns={'机构号': 'inst_id'
         , '机构请求流水': 'inst_trace'
@@ -112,8 +137,8 @@ def get_trx_detail(parm_reader):
         , '用户支付IP归属地': 'pay_loc'
         , '预留手机号归属地': 'mobile_loc'
                           }, inplace=True)
+    rtn_df["batch_no"] = time.strftime("%Y%m%d%H%M%S")
     rtn_df['trx_amount'] = rtn_df['trx_amount'].astype(float)
-    # print('rtn_df\n', rtn_df.tail())
     return rtn_df
 
 
@@ -131,7 +156,8 @@ def get_cust_trx_hist(parm_csv_floder, parm_csv_file_list):
         # 3. Process Csv Dict to Get All Transactions as df_trx_detail
         df_trx_detail = get_trx_detail(reader)
 
-        print('df_trx_detail \n', df_trx_detail.head())
+        # print('df_trx_detail \n', df_trx_detail.head())
         rst = rst.append(df_trx_detail, ignore_index=True)
-    print('rst =', len(rst))
+    # print('rst =', len(rst))
+    # print('rst \n', rst)
     return rst
