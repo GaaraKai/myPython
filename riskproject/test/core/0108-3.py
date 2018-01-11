@@ -1,10 +1,12 @@
 import pandas as pd
 import sys
 
-df1 = pd.DataFrame({"A":['111232','2124124','3345345','4123123'],"B":[5123123,6,7,8],"C":[1242141,1,1,1]})
-print(df1['A'])
-print(df1.dtypes)
+df1 = pd.DataFrame({"A":['111232','','3345345','4123123'],"B":[5123123,6,7,8],"C":[1242141,1,1,1]})
+df1 = df1[df1["A"] != ""]
+print(df1)
 
+
+sys.exit(0)
 # sys.exit(0)
 a =[]
 y = pd.Series([11,22,33,44])

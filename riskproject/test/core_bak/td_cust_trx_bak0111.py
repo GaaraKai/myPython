@@ -35,7 +35,12 @@ def get_mer_name(row):
 
 
 def get_trx_detail(parm_reader):
+    # print('len(parm_reader.get_chunk())  = ', len(parm_reader.get_chunk()))
     rtn_df = pd.DataFrame({})
+    mer_id_list = []
+    mer_name_list = []
+    prod_id_list = []
+    prod_name_list = []
     prod_id = pd.Series()
     prod_name = pd.Series()
     mer_id = pd.Series()
@@ -86,6 +91,21 @@ def get_trx_detail(parm_reader):
         rtn_df["prod_name"] = prod_name
         rtn_df["mer_id"] = mer_id
         rtn_df["mer_name"] = mer_name
+        #
+
+        # OLD FUNCTION
+        # for i in chunk['主商户号']:
+        #     mer_id = get_mer_id(i)
+        #     mer_name = get_mer_name(i)
+        #     mer_id_list.append(mer_id)
+        #     mer_name_list.append(mer_name)
+        # for i in chunk['支付产品编号']:
+        #     prod_id_list.append(i[0:8])
+        #     prod_name_list.append(i[9:-1])
+        # rtn_df["mer_id"] = mer_id_list
+        # rtn_df["mer_name"] = mer_name_list
+        # rtn_df["prod_id"] = prod_id_list
+        # rtn_df["prod_name"] = prod_name_list
 
     rtn_df.rename(columns={'机构号': 'inst_id'
         , '机构请求流水': 'inst_trace'
@@ -126,16 +146,18 @@ def get_cust_trx_hist(parm_csv_floder, parm_csv_file_list):
     print(os.path.basename(__file__), sys._getframe().f_code.co_name, sys._getframe().f_lineno)
     rst = pd.DataFrame({})
     for csv_file in parm_csv_file_list:
-        # 1. 获取CSV文件路径
+        # 1. Get csv files path by csv floder & csv file list
         csv_file_path = os.path.join('%s%s%s' % (parm_csv_floder, '/', csv_file))
         print('csv_file_path =', csv_file_path)
 
-        # 2. 读取CSV文件
+        # 2. Get csv dict by csv file path
         reader = pd.read_csv(csv_file_path, encoding='gbk', chunksize=5000, iterator=True, dtype=str)
 
-        # 3. 数据处理
+        # 3. Process Csv Dict to Get All Transactions as df_trx_detail
         df_trx_detail = get_trx_detail(reader)
 
+        # print('df_trx_detail \n', df_trx_detail.head())
         rst = rst.append(df_trx_detail, ignore_index=True)
-    print('rst \n', rst.tail())
+    # print('rst =', len(rst))
+    # print('rst \n', rst)
     return rst
