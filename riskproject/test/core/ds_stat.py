@@ -13,7 +13,8 @@ def get_prod_id(row):
     else:
         print("lalala",a)
         pass
-    
+
+
 def get_cap_rate(parm_reader):
     all_trx = pd.DataFrame({})
     prod_id = pd.Series()
@@ -23,7 +24,7 @@ def get_cap_rate(parm_reader):
         prod_id_list = chunk.apply(get_prod_id, axis=1)
         prod_id = prod_id.append(prod_id_list)
         all_trx["prod_id"] = prod_id
-    all_trx.rename(columns={"机构号": "inst_id", 
+    all_trx.rename(columns={"机构号": "inst_id",
                             "同盾设备指纹": "td_device",
                             "自研设备指纹": "zy_device",
                             "平台日期": "plat_date"}, inplace=True)
@@ -49,9 +50,28 @@ def get_cap_rate(parm_reader):
     zy_cap_cnt = zy_cap_cnt.reset_index()
 
     # 4. 合并DF
-    merge_td = pd.merge(trx_cnt, td_cap_cnt, how="left", on=["plat_date", "prod_id"])
-    merge_zy = pd.merge(merge_td, zy_cap_cnt, how="left", on=["plat_date", "prod_id"])
+    # print("trx_cnt \n",trx_cnt)
+    # print("td_cap_cnt \n",td_cap_cnt)
+
+    if len(td_cap_cnt) == 0:
+        merge_td = trx_cnt
+        merge_td["td_device"] = 0
+        print("merge_td \n", merge_td)
+    else:
+        merge_td = pd.merge(trx_cnt, td_cap_cnt, how="left", on=["plat_date", "prod_id"])
+
+    if len(zy_cap_cnt) == 0:
+        merge_zy = merge_td
+        merge_zy["zy_device"] = 0
+        print("merge_zy \n", merge_zy)
+    else:
+        merge_zy = pd.merge(merge_td, zy_cap_cnt, how="left", on=["plat_date", "prod_id"])
+
+
+    # merge_zy = pd.merge(merge_td, zy_cap_cnt, how="left", on=["plat_date", "prod_id"])
     merge_zy.rename(columns={"td_device": "td_cap_cnt", "zy_device": "zy_cap_cnt"}, inplace=True)
+    print(sys._getframe().f_code.co_name, "merge_zy\n", merge_zy)
+
     return merge_zy
 
 
@@ -89,25 +109,32 @@ def get_recg_rate(parm_reader):
 
     # 4. 统计自研识别后，认为是同一设备的设备个数（zy_recg_cnt）
     trx_cnt = pd.pivot_table(all_trx, index=["zy_device"], values="inst_id", aggfunc=len)
-    trx_cnt = trx_cnt[trx_cnt["inst_id"] > 1]
-    zy_recg_cnt = len(trx_cnt)
-    print("zy_recg_cnt", zy_recg_cnt)
+    if len(trx_cnt) ==0:
+        rst = pd.DataFrame({"date_range": [rtn_date_range],
+                            "prod_id": [rtn_prod_id],
+                            "td_recg_cnt": 0,
+                            "zy_recg_cnt": 0, }, index=None)
+    else:
+        trx_cnt = trx_cnt[trx_cnt["inst_id"] > 1]
+        zy_recg_cnt = len(trx_cnt)
+        print("zy_recg_cnt", zy_recg_cnt)
 
-    # 5. 找到自研认为是同一设备的设备指纹（zy_dup_list）
-    trx_cnt = trx_cnt.reset_index()
-    zy_dup_list = trx_cnt[["zy_device"]]
+        # 5. 找到自研认为是同一设备的设备指纹（zy_dup_list）
+        trx_cnt = trx_cnt.reset_index()
+        zy_dup_list = trx_cnt[["zy_device"]]
 
-    # 6.  找到自研认为是同一设备的设备指纹所对应的同盾设备指纹，并统计其个数（td_recg_cnt）
-    td_di = pd.merge(all_trx,zy_dup_list,how="inner",on="zy_device")
-    td_di = td_di.drop_duplicates(["td_device"])
-    td_recg_cnt = len(td_di)
-    print("td_recg_cnt \n", td_recg_cnt)
+        # 6.  找到自研认为是同一设备的设备指纹所对应的同盾设备指纹，并统计其个数（td_recg_cnt）
+        td_di = pd.merge(all_trx,zy_dup_list,how="inner",on="zy_device")
+        td_di = td_di.drop_duplicates(["td_device"])
+        td_recg_cnt = len(td_di)
+        print("td_recg_cnt \n", td_recg_cnt)
 
-    # 7.  合并DF返回
-    rst = pd.DataFrame({"date_range": [rtn_date_range],
-                        "prod_id": [rtn_prod_id],
-                        "td_recg_cnt": [td_recg_cnt],
-                        "zy_recg_cnt": [zy_recg_cnt],}, index=None)
+        # 7.  合并DF返回
+        rst = pd.DataFrame({"date_range": [rtn_date_range],
+                            "prod_id": [rtn_prod_id],
+                            "td_recg_cnt": [td_recg_cnt],
+                            "zy_recg_cnt": [zy_recg_cnt],}, index=None)
+    print(sys._getframe().f_code.co_name, "rst\n", rst)
     return rst
 
 

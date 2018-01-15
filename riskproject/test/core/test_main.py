@@ -15,10 +15,7 @@ import cs_warn_mgt
 import ds_stat
 import td_cust_trx
 import docs.conf.conf as conf
-
-
-def get_csv_dict(parm_path):
-    return csv.DictReader(open(parm_path, 'r'))
+import shutil
 
 
 def get_csv_floder():
@@ -63,6 +60,20 @@ def common_log():
     return os.path.basename(__file__)
 
 
+def move_files(parm_csv_floder, parm_csv_file_list, parm_floder_name):
+    father_path = os.path.abspath(os.path.dirname(os.getcwd()) + os.path.sep + ".")
+    new_floder = os.path.abspath(os.path.dirname(father_path) + os.path.sep + "..") + \
+                 '\\docs\\csvfiles_bak\\' + parm_floder_name + '\\'
+    for csv_file in parm_csv_file_list:
+        csv_file_path = os.path.join('%s%s%s' % (parm_csv_floder, '/', csv_file))
+        new_file_path = new_floder + csv_file
+        print("original csv files path =", csv_file_path)
+        print("move to ==>>", new_file_path)
+        shutil.copy(csv_file_path, new_floder)
+        os.remove(csv_file_path)
+    print('Move Files Processing Done...')
+
+
 def main_process(parm_csv_floder):
     """
         Data Preparation From CSV File & Insert into DB
@@ -81,16 +92,19 @@ def main_process(parm_csv_floder):
     if csv_biz_type == conf.CS:  # cs_call
         cs_call_rst = cs_call.get_cs_call(csv_floder, csv_file_list)
         insert_db(cs_call_rst, 'cs_call')
+        move_files(csv_floder, csv_file_list, "cs_call")
     elif csv_biz_type == conf.CW:  # cs_warnmgt
         cs_warnmgt_rst = cs_warn_mgt.get_cs_warn_mgt(csv_floder, csv_file_list)
         insert_db(cs_warnmgt_rst, 'cs_warn_mgt')
+        move_files(csv_floder, csv_file_list, "cs_warn_mgt")
     elif csv_biz_type == conf.DS:  # td_cust_trx_hist & ds_cap_rate & ds_recg_rate
-        # trx_rst = td_cust_trx.get_cust_trx_hist(csv_floder, csv_file_list)
-        # cap_rst = ds_stat.get_ds_cap_rate(csv_floder, csv_file_list)
+        trx_rst = td_cust_trx.get_cust_trx_hist(csv_floder, csv_file_list)
+        cap_rst = ds_stat.get_ds_cap_rate(csv_floder, csv_file_list)
         recg_rst = ds_stat.get_ds_recg_rate(csv_floder, csv_file_list)
-        # insert_db(trx_rst, 'td_cust_trx_hist')
-        # insert_db(cap_rst, 'ds_cap_rate')
-        # insert_db(recg_rst, 'ds_recg_rate')
+        insert_db(trx_rst, 'td_cust_trx_hist')
+        insert_db(cap_rst, 'ds_cap_rate')
+        insert_db(recg_rst, 'ds_recg_rate')
+        move_files(csv_floder, csv_file_list, "ds_stat")
     print('Main Processing Have Done...')
 
 
