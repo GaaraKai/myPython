@@ -52,6 +52,8 @@ def get_device_trx_hist(parm_csv_floder, parm_csv_file_list):
         # 1. 获取CSV文件路径
         csv_file_path = os.path.join('%s%s%s' % (parm_csv_floder, '/', csv_file))
         print('csv_file_path =', csv_file_path)
+        # csv_file_path = "D:/github_program/myPython/docs/csvfiles/todo/NO 1_td_1"
+
 
         # 2. 读取CSV文件
         reader = pd.read_csv(csv_file_path, encoding='utf-8', chunksize=5000, iterator=True, sep="|",dtype=str)
@@ -63,11 +65,32 @@ def get_device_trx_hist(parm_csv_floder, parm_csv_file_list):
         # print("trx amt mean =", mean)
         # print(df_trx_detail)
         # mean_list.append(mean)
+
+        df_trx_detail = df_trx_detail.dropna(axis=0, subset=["mobile_no", "prod_id", "id_no"])
+        df_trx_detail = df_trx_detail[df_trx_detail["mobile_no"] != "00000000000"]
+
         rst = rst.append(df_trx_detail, ignore_index=True)
         reader.close()
 
     print("////////////////////////////////////////////")
+    # print(rst.head())
+    # rst = rst.dropna(axis=0, how="any")
     print(rst.shape)
+    # 找到存在空值的列
+    print(rst.isnull().any())
+    # 找到存在空值的行
+    print(rst[rst.isnull().values==True])
+    # print(rst["prod_id"].unique())
+    # rst = rst.dropna(axis=0, subset=["mobile_no","prod_id","id_no"])
+    # rst = rst[rst["mobile_no"] != "00000000000"]
+    # print(rst)
+    # print(rst)
+    # print(rst.describe())
+    # print(rst["prod_id"].unique())
+
+    """
+    sys.exit(0)
+    print("////////////////////////////////////////////")
     amt_list = rst["trx_amount"]
     # print("mean_list ", mean_list)
     # total_mean = sum(mean_list) / len(mean_list)
@@ -75,6 +98,29 @@ def get_device_trx_hist(parm_csv_floder, parm_csv_file_list):
 
     mean = int(rst["trx_amount"].mean())
     print("total trx amt mean = ", mean)
+    print("***********************************************")
+    """
+    """
+    rlat_mobile_no = pd.pivot_table(rst, index=["td_device"], values="mobile_no", aggfunc=len)
+    rlat_mobile_no = rlat_mobile_no.reset_index()
+    print(rlat_mobile_no.shape)
+    print(rlat_mobile_no.head())
+    aa = rlat_mobile_no[rlat_mobile_no["mobile_no"] == 1]
+    print(aa.shape)
+    print(aa.head())
+    """
+    """
+    rlat_mer_id= pd.pivot_table(rst, index=["td_device,mer_id"], values="inst_id", aggfunc=len)
+    rlat_mer_id = rlat_mer_id.reset_index()
+    ee = rlat_mer_id.sort_values(by="inst_id", axis=0)
+    print(rlat_mer_id.shape)
+    print(ee)
+
+
+
+    sys.exit(0)
+    print("***********************************************")
+
     fig = plt.figure(figsize=(20, 20))
     ax_amount = fig.add_subplot(1, 1, 1)
     # ax2 = fig.add_subplot(2, 1, 2)
@@ -85,6 +131,9 @@ def get_device_trx_hist(parm_csv_floder, parm_csv_file_list):
 
 
     print("////////////////////////////////////////////")
+    """
+
+
     """
     sys.exit(0)
     print("*********************************************")
@@ -138,6 +187,7 @@ def get_csv_floder():
     global csv_biz_type
     father_path = os.path.abspath(os.path.dirname(os.getcwd()) + os.path.sep + ".")
     default_dir = os.path.abspath(os.path.dirname(father_path) + os.path.sep + "..") + '\\docs\\csvfiles\\'
+    # csv_floder = "D:/github_program/myPython/docs/csvfiles/todo/"
     csv_floder = tf.askdirectory(title=u"选择文件CSV文件夹", initialdir=(os.path.expanduser(default_dir)))
     if len(csv_floder) != 0:
         csv_biz_type = csv_floder.split('/')[-1]
