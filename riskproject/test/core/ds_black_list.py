@@ -7,6 +7,8 @@ import tkinter.filedialog as tf
 import tkinter.messagebox as tm
 import traceback
 import sqlalchemy as sq
+import gc
+import numpy as np
 
 import shutil
 import time
@@ -47,37 +49,63 @@ def get_trx_detail(parm_reader):
 def get_device_trx_hist(parm_csv_floder, parm_csv_file_list):
     print(os.path.basename(__file__), sys._getframe().f_code.co_name, sys._getframe().f_lineno)
     rst = pd.DataFrame({})
+    cap_trx_cnt = 0
+    total_trx_amount = .0
+    mer_id_srs = pd.Series([])
+    # mer_id_list = pd.DataFrame({})
     mean_list = []
+    # parm_csv_file_list = ["NO 1_td_1","NO 1_td_1"]
+    # gc.disable()
+    # gc.set_debug(gc.DEBUG_STATS | gc.DEBUG_LEAK)
+    gc.collect()
+    gc.disable()
     for csv_file in parm_csv_file_list:
         # 1. 获取CSV文件路径
         csv_file_path = os.path.join('%s%s%s' % (parm_csv_floder, '/', csv_file))
         print('csv_file_path =', csv_file_path)
-        csv_file_path = "C://Users//Administrator//Desktop//py_test//todo//NO 1_td_1"
-
+        # csv_file_path = "D:/github_program/myPython/docs/csvfiles/todo/NO 1_td_1"
 
         # 2. 读取CSV文件
         reader = pd.read_csv(csv_file_path, encoding='utf-8', chunksize=5000, iterator=True, sep="|",dtype=str)
 
         # 3. 数据处理
         df_trx_detail = get_trx_detail(reader)
-        # mean = int(df_trx_detail["trx_amount"].mean())
-        print("df_trx_detail =",df_trx_detail.shape)
-        # print("trx amt mean =", mean)
-        # print(df_trx_detail)
-        # mean_list.append(mean)
+        print("df_trx_detail =", df_trx_detail.shape)
 
-        # df_trx_detail = df_trx_detail.dropna(axis=0, subset=["mer_id"])
-        df_trx_detail = df_trx_detail[df_trx_detail["mobile_no"] != "00000000000"]
+        total_trx_amount = total_trx_amount + df_trx_detail["trx_amount"].sum()
+        cap_trx_cnt = cap_trx_cnt + df_trx_detail.shape[0]
 
         rst = rst.append(df_trx_detail, ignore_index=True)
+
+        # df_trx_detail = df_trx_detail[df_trx_detail["mobile_no"] != "00000000000"]
+        # mobile_no_rst = rst.append(df_trx_detail, ignore_index=True)
         reader.close()
-
+        del reader
+        del df_trx_detail
+    gc.enable()  # re-enable garbage collection
+    gc.collect()
     print("////////////////////////////////////////////")
-    # print(rst.head())
-    # rst = rst.dropna(axis=0, how="any")
-    print(rst.shape)
+    print("total_trx_amount:", total_trx_amount)
+    print("cap_trx_cnt:", cap_trx_cnt)
+    mer_id_cnt = np.array(rst["mer_id"].unique()).size
+    prod_id_cnt= pd.DataFrame(np.array(rst["prod_id"].unique()).tolist()).dropna(axis=0,how='any')
+    device_id_cnt = pd.DataFrame(np.array(rst["td_device"].unique()).tolist()).dropna(axis=0, how='any').size
+    print("mer_id_cnt:", mer_id_cnt)
+    print("prod_id_cnt:", prod_id_cnt.size)
+    print("device_id_cnt:", device_id_cnt)
+    print("prod_id_cnt details: \n", prod_id_cnt)
     print("////////////////////////////////////////////")
 
+    sys.exit(0)
+    # 2、 mer总数
+    print("mer_id cnt ", mer_id_srs.size)
+    print("////////////////////////////////////////////")
+    x = rst["mer_id"].value_counts()
+    print(x.size)
+
+
+
+    """
     aa = pd.pivot_table(rst, index=["td_device","mobile_no"], values=["inst_trace"], aggfunc=len).reset_index()
     ee = aa.sort_values(by="inst_trace", axis=0, ascending=False)
     print(ee.head())
@@ -144,7 +172,7 @@ def get_device_trx_hist(parm_csv_floder, parm_csv_file_list):
     # print(rst)
     # print(rst.describe())
     # print(rst["prod_id"].unique())
-
+    """
     """
     sys.exit(0)
     print("////////////////////////////////////////////")
@@ -244,8 +272,8 @@ def get_csv_floder():
     global csv_biz_type
     father_path = os.path.abspath(os.path.dirname(os.getcwd()) + os.path.sep + ".")
     default_dir = os.path.abspath(os.path.dirname(father_path) + os.path.sep + "..") + '\\docs\\csvfiles\\'
-    csv_floder = "C://Users//Administrator//Desktop//py_test//todo"
-    # csv_floder = tf.askdirectory(title=u"选择文件CSV文件夹", initialdir=(os.path.expanduser(default_dir)))
+    # csv_floder = "D:/github_program/myPython/docs/csvfiles/todo/"
+    csv_floder = tf.askdirectory(title=u"选择文件CSV文件夹", initialdir=(os.path.expanduser(default_dir)))
     if len(csv_floder) != 0:
         csv_biz_type = csv_floder.split('/')[-1]
         print('csv_biz_type = ', csv_biz_type)
@@ -285,6 +313,3 @@ if __name__ == '__main__':
     print('end_time   =', end_time)
     print('diff_Time =', end_time - start_time)
     print('System Processing Done...')
-
-
-
