@@ -17,6 +17,7 @@ import math
 
 def get_trx_detail(parm_reader):
     rtn_df = pd.DataFrame({})
+    stat_start_date = "2018-01-01"
     for chunk in parm_reader:
         rtn_df = rtn_df.append(chunk)
         # print("rtn_df.shape = ", rtn_df.shape)
@@ -43,6 +44,12 @@ def get_trx_detail(parm_reader):
     rtn_df['trx_amount'] = rtn_df['trx_amount'] / 100
     # print(rtn_df.tail())
     # print("ALL rtn_df.shape = ", rtn_df.shape)
+    print("////////////////////////////////////////////")
+    rtn_df["plat_date"] = pd.to_datetime(rtn_df["plat_date"])
+    print("stat_start_date = ",stat_start_date)
+    print("////////////////////////////////////////////")
+    rtn_df = rtn_df[rtn_df["plat_date"] >= stat_start_date]
+    print(rtn_df.head())
 
     return rtn_df
 
@@ -55,8 +62,16 @@ def get_device_report(parm_csv_floder, parm_csv_file_list):
     td_device_rst = pd.DataFrame({})
     cap_trx_cnt = 0
     total_trx_amount = .0
-    date_range = 106
+    date_range = 15
+    total_intercept_cnt = 0
+    total_intercept_amt = 0
+    daily_intercept_cnt = 0
+    daily_intercept_amt = 0
     # gc.set_debug(gc.DEBUG_STATS | gc.DEBUG_LEAK)
+    print("********************************************")
+    ready_to_add_list = pd.read_csv("C:/Users/wangrongkai/Desktop/123/ready_to_add.csv")["TD_DEVICEID"].tolist()
+    print("The Total Count of TD_device GRAY List which ready to import:", len(ready_to_add_list))
+    print("********************************************")
     gc.collect()
     gc.disable()
     for csv_file in parm_csv_file_list:
@@ -80,6 +95,8 @@ def get_device_report(parm_csv_floder, parm_csv_file_list):
     gc.enable()  # re-enable garbage collection
     gc.collect()
     print("////////////////////////////////////////////")
+    print(rst.shape)
+    print("////////////////////////////////////////////")
     print("Historical Data:")
     total_trx_amount = round(total_trx_amount / 100000000, 2)
     print("Total Device ID Transaction Count:", cap_trx_cnt)
@@ -96,58 +113,57 @@ def get_device_report(parm_csv_floder, parm_csv_file_list):
 
     print("////////////////////////////////////////////")
     prod_id_details_path = rst_dir + "prod_id_details" + ".csv"
-    pd.DataFrame(rst["prod_id"].value_counts()).reset_index().to_csv(prod_id_details_path, index=False)
+    # pd.DataFrame(rst["prod_id"].value_counts()).reset_index().to_csv(prod_id_details_path, index=False)
     print("1.Result Create Finished:", prod_id_details_path)
     print("////////////////////////////////////////////")
 
     print("////////////////////////////////////////////")
     mer_id_details_path = rst_dir + "mer_id_details" + ".csv"
-    pd.DataFrame(rst["mer_id"].value_counts()).reset_index().head(10).to_csv(mer_id_details_path, index=False)
+    # pd.DataFrame(rst["mer_id"].value_counts()).reset_index().head(10).to_csv(mer_id_details_path, index=False)
     print("2.Result Create Finished:", mer_id_details_path)
     print("////////////////////////////////////////////")
 
     print("////////////////////////////////////////////")
     td_device_details_path = rst_dir + "td_device_details" + ".csv"
-    pd.DataFrame(rst["td_device"].value_counts()).reset_index().head(10).to_csv(td_device_details_path, index=False)
+    # pd.DataFrame(rst["td_device"].value_counts()).reset_index().head(10).to_csv(td_device_details_path, index=False)
     print("3.Result Create Finished:", td_device_details_path)
     print("////////////////////////////////////////////")
 
     print("////////////////////////////////////////////")
-    td_device_cnt = pd.pivot_table(rst,index=["td_device"],values=["trx_amount"],aggfunc=len)
-    td_device_sum = pd.pivot_table(rst,index=["td_device"],values=["trx_amount"],aggfunc=np.sum)
-    td_device_piv = pd.DataFrame(td_device_cnt).reset_index()
-    df_td_device_sum = pd.DataFrame(td_device_sum).reset_index(drop=True)
-    td_device_piv["sum"] = df_td_device_sum["trx_amount"]
-    td_device_piv.rename(columns={"trx_amount": "cnt"}, inplace=True)
+    if len(rst) != 0:
+        td_device_cnt = pd.pivot_table(rst,index=["td_device"],values=["trx_amount"],aggfunc=len)
+        td_device_sum = pd.pivot_table(rst,index=["td_device"],values=["trx_amount"],aggfunc=np.sum)
+        td_device_piv = pd.DataFrame(td_device_cnt).reset_index()
+        df_td_device_sum = pd.DataFrame(td_device_sum).reset_index(drop=True)
+        td_device_piv["sum"] = df_td_device_sum["trx_amount"]
+        td_device_piv.rename(columns={"trx_amount": "cnt"}, inplace=True)
+        for single_td_device in td_device_piv["td_device"]:
+            if single_td_device in ready_to_add_list:
+                row = td_device_piv[td_device_piv["td_device"] == single_td_device]
+                td_device_rst = td_device_rst.append(row)
+        if len(td_device_rst) != 0:
+            td_device_rst["cnt_daily"] = round(td_device_rst["cnt"] / date_range, 2)
+            td_device_rst["sum_daily"] = round(td_device_rst["sum"] / date_range, 2)
+            total_intercept_cnt = int(td_device_rst["cnt"].sum())
+            total_intercept_amt = td_device_rst["sum"].sum()
+            daily_intercept_cnt = int(td_device_rst["cnt_daily"].sum())
+            daily_intercept_amt = td_device_rst["sum_daily"].sum()
+            td_device_rst = td_device_rst.sort_values(by='sum_daily', axis=0, ascending=False)
+        del td_device_cnt
+        del td_device_sum
+        del df_td_device_sum
+    else:
+        td_device_piv = pd.DataFrame({})
     print("////////////////////////////////////////////")
 
-    print("********************************************")
-    ready_to_add_list = pd.read_csv("C:/Users/wangrongkai/Desktop/123/ready_to_add.csv")["TD_DEVICEID"].tolist()
-    print("The Total Count of TD_device GRAY List which ready to import:", len(ready_to_add_list))
-    # ready_to_add_list = ["00003437192547be98c8c20fe990c1b0","00020988c4de409aace44cfc44384bd5","00029aa3204bb47d1288b7e5ee37be89"]
-    print("********************************************")
-
     print("////////////////////////////////////////////")
-    for single_td_device in td_device_piv["td_device"]:
-        if single_td_device in ready_to_add_list:
-            row = td_device_piv[td_device_piv["td_device"] == single_td_device]
-            td_device_rst = td_device_rst.append(row)
-    td_device_rst["cnt_daily"] = round(td_device_rst["cnt"] / date_range, 2)
-    td_device_rst["sum_daily"] = round(td_device_rst["sum"] / date_range, 2)
-    td_device_rst = td_device_rst.sort_values(by='sum_daily', axis=0, ascending=False)
+    # td_device_rst = td_device_rst.sort_values(by='sum_daily', axis=0, ascending=False)
     td_device_rst_path = rst_dir + "td_device_rst" + ".csv"
-    td_device_rst.to_csv(td_device_rst_path)
+    # td_device_rst.to_csv(td_device_rst_path)
     print("4.Result Create Finished:", td_device_rst_path)
     print("The Count of In the TD_device GRAY List & exist transaction in historical data:",
           td_device_rst.shape[0])
-    print("////////////////////////////////////////////")
-
-    print("////////////////////////////////////////////")
     print("Based on historical data, the NEGATIVE Effects if import TD_device GRAY List is:")
-    total_intercept_cnt = int(td_device_rst["cnt"].sum())
-    total_intercept_amt = td_device_rst["sum"].sum()
-    daily_intercept_cnt = int(td_device_rst["cnt_daily"].sum())
-    daily_intercept_amt = td_device_rst["sum_daily"].sum()
     print("Total Count of Gray List interception will be increase:", total_intercept_cnt)
     print("Total Amount of Gray List interception will be increase:", total_intercept_amt)
     print("Daily Total Count of Gray List interception will be increase:", daily_intercept_cnt)
@@ -156,10 +172,7 @@ def get_device_report(parm_csv_floder, parm_csv_file_list):
     print("////////////////////////////////////////////")
     del rst
     del td_device_piv
-    del td_device_cnt
-    del td_device_sum
     del td_device_rst
-    del df_td_device_sum
     return 0
 
 def get_csv_floder():
