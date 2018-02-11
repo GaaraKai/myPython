@@ -62,7 +62,7 @@ def get_device_report(parm_csv_floder, parm_csv_file_list):
     td_device_rst = pd.DataFrame({})
     cap_trx_cnt = 0
     total_trx_amount = .0
-    date_range = 15
+    date_range = 31
     total_intercept_cnt = 0
     total_intercept_amt = 0
     daily_intercept_cnt = 0
@@ -107,8 +107,8 @@ def get_device_report(parm_csv_floder, parm_csv_file_list):
     device_id_cnt_daily = round(device_id_cnt / date_range, 2)
     print("Total Device ID Merchant Count:", mer_id_cnt)
     print("Total Device ID Product Count:", prod_id_cnt)
-    print("Total Device ID Transaction Count:", device_id_cnt)
-    print("Daily Total Device ID Transaction Count:", device_id_cnt_daily)
+    print("Total Device ID Capture Count:", device_id_cnt)
+    print("Daily Total Device ID Capture Count:", device_id_cnt_daily)
     print("////////////////////////////////////////////")
 
     print("////////////////////////////////////////////")
