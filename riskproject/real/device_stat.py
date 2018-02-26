@@ -1,21 +1,17 @@
-import pandas as pd
-import matplotlib.pyplot as plt
+# -*- coding: utf-8 -*-
 import datetime
+import gc
+import logging
 import os
 import sys
+import time
 import tkinter.filedialog as tf
 import tkinter.messagebox as tm
-import traceback
-import sqlalchemy as sq
-import gc
-import numpy as np
 
-import shutil
-import time
-import math
-import logging
-import configparser
-import config
+import numpy as np
+import pandas as pd
+
+from riskproject.real import config
 
 
 class Logger:
@@ -80,7 +76,7 @@ def get_trx_detail(parm_reader):
     # logger.info(rtn_df.tail())
     # logger.info("ALL rtn_df.shape = ", rtn_df.shape)
     rtn_df["plat_date"] = pd.to_datetime(rtn_df["plat_date"])
-    rtn_df = rtn_df[rtn_df["plat_date"] >= conf.START_DATE]
+    rtn_df = rtn_df[(rtn_df["plat_date"] >= conf.START_DATE) & (rtn_df["plat_date"] <= conf.END_DATE)]
 
     return rtn_df
 
@@ -179,7 +175,7 @@ def susp_mer_stat(parm_rst):
 
 def overall_rpt(parm_rst):
     global CAP_TRX_CNT, TOT_TRX_AMT
-    date_range = 31
+    # date_range = 31
     logger.info("****OVERALL REPORT START****")
     logger.info("[1]. TOTAL DATA SHAPE:")
     logger.info(parm_rst.shape)
@@ -190,7 +186,7 @@ def overall_rpt(parm_rst):
     mer_id_cnt = np.array(parm_rst["mer_id"].unique())
     prod_id_cnt = pd.DataFrame(np.array(parm_rst["prod_id"].unique()).tolist()).dropna(axis=0, how='any').size
     device_id_cnt = pd.DataFrame(np.array(parm_rst["td_device"].unique()).tolist()).dropna(axis=0, how='any').size
-    device_id_cnt_daily = round(device_id_cnt / date_range, 2)
+    device_id_cnt_daily = round(device_id_cnt / conf.DATE_RANGE, 2)
     logger.info("[5]. TOTAL MERCHANT COUNT: %s" % mer_id_cnt.size)
     mer_id_details_path = conf.RESULT_PATH + "mer_id_details" + ".csv"
     # pd.DataFrame(rst["mer_id"].value_counts()).reset_index().head(10).to_csv(mer_id_details_path, index=False)
@@ -265,10 +261,10 @@ def create_rpt(parm_rst):
         overall_rpt(parm_rst)
         logger.info("--------------------------------------------")
         # 2. SUSPICIOUS DEVICE ANALYSIS
-        susp_device_stat(parm_rst)
+        # susp_device_stat(parm_rst)
         logger.info("--------------------------------------------")
         # 3. SUSPICIOUS MERCHANT ANALYSIS
-        susp_mer_stat(parm_rst)
+        # susp_mer_stat(parm_rst)
     else:
         logger.info("parm_rst IS NULL, WRONG...")
     del parm_rst
@@ -296,12 +292,15 @@ def main_process(parm_csv_folder):
 
 
 def init():
-    logger.info("--------------------------------------------")
+    logger.info("\n####LOG START####")
+    logger.info("\n--------------------------------------------")
     logger.info("[1]. SYSTEM CONSTANT:")
     logger.info("LOG PATH: %s" % conf.LOG_PATH)
     logger.info("RESULT PATH: %s" % conf.RESULT_PATH)
     logger.info("[2]. BUSINESS CONSTANT:")
     logger.info("START DATE: %s" % conf.START_DATE)
+    logger.info("END DATE: %s" % conf.END_DATE)
+    logger.info("DATE RANGE: %s" % conf.DATE_RANGE)
     logger.info("ID HURDLE: %s" % conf.ID_HURDLE)
     logger.info("TRX HURDLE: %s" % conf.TRX_HURDLE)
     logger.info("--------------------------------------------")
@@ -309,7 +308,7 @@ def init():
 
 if __name__ == '__main__':
     start_time = datetime.datetime.now()
-    conf = config.Config()
+    conf = config.DeviceConfig()
     logger = Logger(path=conf.LOG_PATH)
     init()
     csv_folder = get_csv_folder()
