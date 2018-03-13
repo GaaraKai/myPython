@@ -7,7 +7,8 @@ def mkSubFile(lines, head, srcName, sub):
     [des_filename, extname] = os.path.splitext(srcName)
     filename = des_filename + '_' + str(sub) + extname
     print('make file: %s' % filename)
-    fout = open(filename, encoding='utf-8',mode='w')
+    fout = open(filename, encoding='gbk',mode='w')
+    # fout = open(filename, encoding='gbk', mode='w')
     try:
         fout.writelines([head])
         fout.writelines(lines)
@@ -17,7 +18,8 @@ def mkSubFile(lines, head, srcName, sub):
 
 
 def splitByLineCount(filename, count):
-    fin = open(filename, encoding='utf-8',mode='r')
+    fin = open(filename, encoding='gbk',mode='r')
+    # fin = open(filename, encoding='gbk', mode='r')
     try:
         head = fin.readline()
         buf = []
@@ -35,8 +37,10 @@ def splitByLineCount(filename, count):
 
 if __name__ == '__main__':
     start_time = datetime.datetime.now()
-    big_file_path = "D:\\github_program\\myPython\\docs\\csvfiles\\ds_anliysis\\NO 1_td"
-    split_line = 500000
+    big_file_path = "E:/SVN文档数据/08_产品风控/04.产品需求文档/" \
+                    "39.反洗钱_非银行支付机构反洗钱现场检查数据接口/反洗钱现场检查下载结果/data_proc/7-0308" \
+                    "/(十)存量特约商户风险等级划分记录(网络支付、预付卡、银行卡收单)20180308110323.csv"
+    split_line = 10000
     splitByLineCount(big_file_path, split_line)
     end_time = datetime.datetime.now()
     print('start_time =', start_time)
