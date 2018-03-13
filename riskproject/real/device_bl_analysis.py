@@ -83,7 +83,6 @@ def get_trx_detail(parm_reader):
 
 def overall_rpt(parm_rst):
     global CAP_TRX_CNT, TOT_TRX_AMT
-    # date_range = 31
     logger.info("****OVERALL REPORT START****")
     logger.info("[1]. TOTAL DATA SHAPE:")
     logger.info(parm_rst.shape)
@@ -98,7 +97,7 @@ def overall_rpt(parm_rst):
     logger.info("[5]. TOTAL MERCHANT COUNT: %s" % mer_id_cnt.size)
     mer_id_details_path = conf.RESULT_PATH + "mer_id_details" + ".csv"
     # pd.DataFrame(rst["mer_id"].value_counts()).reset_index().head(10).to_csv(mer_id_details_path, index=False)
-    logger.info("TOP10 MERCHANT COUNT DETAILS SAVE TO %s" % mer_id_details_path)
+    logger.info("TOP10 MERCHANT COUNT DETAILS SAVE TO: %s" % mer_id_details_path)
     logger.info("[6]. TOTAL PRODUCT COUNT: %s" % prod_id_cnt)
     prod_id_details_path = conf.RESULT_PATH + "prod_id_details" + ".csv"
     # pd.DataFrame(rst["prod_id"].value_counts()).reset_index().to_csv(prod_id_details_path, index=False)
@@ -122,8 +121,8 @@ def device_analysis(parm_df):
     logger.info("[2]. FIND TD_DEVICE TRANSACTION AMOUNT[TOP5]:")
     td_device_with_trx_amt = pd.pivot_table(parm_df, index=["td_device"], values=["trx_amount"], aggfunc=np.sum) \
         .sort_values(by='trx_amount', axis=0, ascending=False).reset_index()
-    # td_device_with_trx_amt.rename(columns={"trx_amount": "trx_amount1"}, inplace=True)
     logger.info(td_device_with_trx_amt.head())
+
     logger.info("[3]. MERGE TRANSACTION COUNT & AMOUNT BY TD_DEVICE[TOP5]:")
     merge_rst = pd.merge(td_device_with_trx_cnt, td_device_with_trx_amt, how='inner', on=['td_device'])
     merge_rst["avg_trx_amt_by_one_device"] = \
@@ -131,18 +130,24 @@ def device_analysis(parm_df):
     logger.info(merge_rst.head())
     logger.info("SHAPE:")
     logger.info(merge_rst.shape)
-    # merge_rst_path = "C:/Users/wangrongkai/Desktop/7-12月案件数据/123.csv"
-    # merge_rst.to_csv(merge_rst_path, index=False)
-    logger.info("[4]. PENDING TD_DEVICE FILE: %s" % conf.PND_TD_DEVICE_FILE)
-    pnd_td_device_list = pd.read_csv(conf.PND_TD_DEVICE_FILE)["sup_td_device"].tolist()
+
+    logger.info("[4]. SAVE TD_DEVICE TRANSACTION DETAILS:")
+    merge_rst.sort_values(by='trx_amount', axis=0, ascending=False, inplace=True)
+    merge_rst_path = conf.RESULT_PATH + "device_bl_analysis.csv"
+    logger.info("SAVE TO: %s" % merge_rst_path)
+    merge_rst.to_csv(merge_rst_path, index=False)
+
+    pnd_td_device_file = conf.CONF_PATH + "pnd_td_device.csv"
+    logger.info("[5]. PENDING TD_DEVICE FILE: %s" % pnd_td_device_file)
+    pnd_td_device_list = pd.read_csv(pnd_td_device_file)["sup_td_device"].tolist()
     if len(pnd_td_device_list) == 0:
         logger.info("==>> NO PENDING TD_DEVICE")
     else:
         logger.info("==>> PENDING TD_DEVICE COUNT: %s" % len(pnd_td_device_list))
         logger.info("==>> PENDING TD_DEVICE DETAILS[TOP3]: %s" % pnd_td_device_list[0:3])
         logger.info("==>> RESULT OF PENDING TD_DEVICE TRANSACTION COUNT & AMOUNT[TOP5]:")
-        key_mer_trx_stat = pd.DataFrame(merge_rst[merge_rst["td_device"].isin(pnd_td_device_list)])
-        logger.info(key_mer_trx_stat.head())
+        td_device_trx_stat = pd.DataFrame(merge_rst[merge_rst["td_device"].isin(pnd_td_device_list)])
+        logger.info(td_device_trx_stat.head())
     logger.info("****TD_DEVICE ANALYSIS END****")
     del parm_df
 
@@ -161,7 +166,6 @@ def data_preproc(parm_csv_folder, parm_csv_file_list):
         csv_file_path = os.path.join('%s%s%s' % (parm_csv_folder, '/', csv_file))
         logger.info("csv_file_path = %s" % csv_file_path)
         # csv_file_path = "D:/github_program/myPython/docs/csvfiles/201801/td_device_201801"
-        # csv_file_path = "D:/github_program/myPython/docs/csvfiles/todo_td/NO 1_td_1"
 
         # 2. 读取CSV文件
         reader = pd.read_csv(csv_file_path, encoding='utf-8', chunksize=5000, iterator=True, sep="|", dtype=str)
