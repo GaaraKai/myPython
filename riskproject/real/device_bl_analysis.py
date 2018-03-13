@@ -11,7 +11,7 @@ import tkinter.messagebox as tm
 import numpy as np
 import pandas as pd
 
-from riskproject.real import config
+from riskproject.test.core import config
 
 
 class Logger:
@@ -203,6 +203,42 @@ def overall_rpt(parm_rst):
     logger.info("****OVERALL REPORT END****")
 
 
+def device_analysis(parm_df):
+    logger.info("****TD_DEVICE ANALYSIS BEGIN****")
+    logger.info("[1]. FIND TD_DEVICE TRANSACTION COUNT[TOP5]:")
+    td_device_with_trx_cnt = pd.pivot_table(parm_df, index=["td_device"], values=["inst_id"], aggfunc=len) \
+        .sort_values(by='inst_id', axis=0, ascending=False).reset_index()
+    td_device_with_trx_cnt.rename(columns={"inst_id": "trx_cnt"}, inplace=True)
+    logger.info(td_device_with_trx_cnt.head())
+
+    logger.info("[2]. FIND TD_DEVICE TRANSACTION AMOUNT[TOP5]:")
+    td_device_with_trx_amt = pd.pivot_table(parm_df, index=["td_device"], values=["trx_amount"], aggfunc=np.sum) \
+        .sort_values(by='trx_amount', axis=0, ascending=False).reset_index()
+    # td_device_with_trx_amt.rename(columns={"trx_amount": "trx_amount1"}, inplace=True)
+    logger.info(td_device_with_trx_amt.head())
+    logger.info("[3]. MERGE TRANSACTION COUNT & AMOUNT BY TD_DEVICE[TOP5]:")
+    merge_rst = pd.merge(td_device_with_trx_cnt, td_device_with_trx_amt, how='inner', on=['td_device'])
+    merge_rst["avg_trx_amt_by_one_device"] = \
+        round(merge_rst["trx_amount"] / merge_rst["trx_cnt"], 0)
+    logger.info(merge_rst.head())
+    logger.info("SHAPE:")
+    logger.info(merge_rst.shape)
+    # merge_rst_path = "C:/Users/wangrongkai/Desktop/7-12月案件数据/123.csv"
+    # merge_rst.to_csv(merge_rst_path, index=False)
+    logger.info("[4]. PENDING TD_DEVICE FILE: %s" % conf.PND_TD_DEVICE_FILE)
+    pnd_td_device_list = pd.read_csv(conf.PND_TD_DEVICE_FILE)["sup_td_device"].tolist()
+    if len(pnd_td_device_list) == 0:
+        logger.info("==>> NO PENDING TD_DEVICE")
+    else:
+        logger.info("==>> PENDING TD_DEVICE COUNT: %s" % len(pnd_td_device_list))
+        logger.info("==>> PENDING TD_DEVICE DETAILS[TOP3]: %s" % pnd_td_device_list[0:3])
+        logger.info("==>> RESULT OF PENDING TD_DEVICE TRANSACTION COUNT & AMOUNT[TOP5]:")
+        key_mer_trx_stat = pd.DataFrame(merge_rst[merge_rst["td_device"].isin(pnd_td_device_list)])
+        logger.info(key_mer_trx_stat.head())
+    logger.info("****TD_DEVICE ANALYSIS END****")
+    del parm_df
+
+
 def data_preproc(parm_csv_folder, parm_csv_file_list):
     global CAP_TRX_CNT, TOT_TRX_AMT
     CAP_TRX_CNT = 0.
@@ -216,7 +252,7 @@ def data_preproc(parm_csv_folder, parm_csv_file_list):
         # 1. 获取CSV文件路径
         csv_file_path = os.path.join('%s%s%s' % (parm_csv_folder, '/', csv_file))
         logger.info("csv_file_path = %s" % csv_file_path)
-        # csv_file_path = "D:/github_program/myPython/docs/csvfiles/201801/td_device_201801"
+        csv_file_path = "D:/github_program/myPython/docs/csvfiles/201801/td_device_201801"
         # csv_file_path = "D:/github_program/myPython/docs/csvfiles/todo_td/NO 1_td_1"
 
         # 2. 读取CSV文件
@@ -239,10 +275,8 @@ def data_preproc(parm_csv_folder, parm_csv_file_list):
 
 
 def get_csv_folder():
-    # father_path = os.path.abspath(os.path.dirname(os.getcwd()) + os.path.sep + ".")
-    # default_dir = os.path.abspath(os.path.dirname(father_path) + os.path.sep + "..") + '\\docs\\csvfiles'
-    # csv_folder = "D:/github_program/myPython/docs/csvfiles/todo_td/"
-    csv_folder = tf.askdirectory(title=u"选择文件CSV文件夹", initialdir=conf.CSV_PATH)
+    csv_folder = "D:/github_program/myPython/docs/csvfiles/todo_td/"
+    # csv_folder = tf.askdirectory(title=u"选择文件CSV文件夹", initialdir=conf.CSV_PATH)
     if len(csv_folder) == 0:
         tm.showinfo(title='提示', message='请选取的CSV文件夹')
         sys.exit(0)
@@ -261,6 +295,9 @@ def create_rpt(parm_rst):
         logger.info("--------------------------------------------")
         # 3. SUSPICIOUS MERCHANT ANALYSIS
         # susp_mer_stat(parm_rst)
+        logger.info("--------------------------------------------")
+        # 4. DEVICE ANALYSIS
+        device_analysis(parm_rst)
     else:
         logger.info("parm_rst IS NULL, WRONG...")
     del parm_rst
