@@ -155,8 +155,8 @@ def main_process(parm_csv_floder):
         # trx_rst = td_cust_trx.get_cust_trx_hist(csv_floder, csv_file_list)
         cap_rst = get_ds_cap_rate(parm_csv_floder, csv_file_list)
         recg_rst = get_ds_recg_rate(parm_csv_floder, csv_file_list)
-        # insert_db(cap_rst, 'ds_cap_rate')
-        # insert_db(recg_rst, 'ds_recg_rate')
+        insert_db(cap_rst, 'ds_cap_rate')
+        insert_db(recg_rst, 'ds_recg_rate')
         # backup_csv(csv_floder, csv_file_list, "ds_stat")
     logger.info('Main Processing Have Done...')
 
@@ -192,6 +192,8 @@ def get_recg_rate(parm_reader):
     trx_cnt = pd.pivot_table(all_trx, index=["zy_device"], values="inst_id", aggfunc=len)
     if len(trx_cnt) ==0:
         rst = pd.DataFrame({"date_range": [rtn_date_range],
+                            "base_date": [start_date],
+                            "stat_date": [end_date],
                             "prod_id": [rtn_prod_id],
                             "td_recg_cnt": 0,
                             "zy_recg_cnt": 0, }, index=None)
@@ -210,6 +212,8 @@ def get_recg_rate(parm_reader):
 
         # 7.  合并DF返回
         rst = pd.DataFrame({"date_range": [rtn_date_range],
+                            "base_date": [start_date],
+                            "stat_date": [end_date],
                             "prod_id": [rtn_prod_id],
                             "td_recg_cnt": [td_recg_cnt],
                             "zy_recg_cnt": [zy_recg_cnt],}, index=None)
@@ -311,7 +315,7 @@ def init():
     global TO_BE_BUSI_TYPE, TO_BE_CSV_FLODER
     # TO_BE_BUSI_TYPE: CS, CW, DS
     TO_BE_BUSI_TYPE = "DS"
-    TO_BE_CSV_FLODER = "E://myself//VBA//csv_files//source//ds//0427-0503"
+    TO_BE_CSV_FLODER = "E://myself//VBA//csv_files//source//ds//0601-0607"
 
     logger.info("\n####LOG START####")
     logger.info("\n--------------------------------------------")
