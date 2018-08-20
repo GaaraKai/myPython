@@ -9,12 +9,12 @@ import tkinter.filedialog as tf
 import tkinter.messagebox
 import traceback
 
+import cs_warn_mgt
 import ds_cap_rate
 import pandas as pd
 import sqlalchemy as sq
 
-import cs_call
-import cs_warn_mgt
+from riskproject.real import cs_call
 from riskproject.test.core_bak import ds_recg_rate
 
 
