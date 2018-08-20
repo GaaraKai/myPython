@@ -154,6 +154,10 @@ def main_process(parm_csv_floder):
     elif TO_BE_BUSI_TYPE == conf.CST_DS:  # td_cust_trx_hist & ds_cap_rate & ds_recg_rate
         # trx_rst = td_cust_trx.get_cust_trx_hist(csv_floder, csv_file_list)
         cap_rst = get_ds_cap_rate(parm_csv_floder, csv_file_list)
+        # logger.info("----->>>>>cap_rst =  %s" % cap_rst)
+        # cap_rst_save_path = conf.RESULT_PATH + "cap_rst_result_" + "2018070901" + ".csv"
+        # logger.info("SAVE TO: %s" % cap_rst_save_path)
+        # cap_rst.to_csv(cap_rst_save_path, index=False)
         recg_rst = get_ds_recg_rate(parm_csv_floder, csv_file_list)
         insert_db(cap_rst, 'ds_cap_rate')
         insert_db(recg_rst, 'ds_recg_rate')
@@ -255,35 +259,94 @@ def get_cap_rate(parm_reader):
                             "平台日期": "plat_date"}, inplace=True)
     trx_cnt = pd.pivot_table(all_trx, index=["plat_date", "prod_id"], values="inst_id", aggfunc=len)
     trx_cnt.rename(columns={"inst_id": "trx_cnt"}, inplace=True)
+
     # 1. 排除异常数据（空值，111111,000000）
+    # NULL DATA:
+    all_trx_fillna = all_trx.fillna("NULL")
+    all_trx_td_null = all_trx_fillna[all_trx_fillna["td_device"] == "NULL"]
+    all_trx_zy_null = all_trx_fillna[all_trx_fillna["zy_device"] == "NULL"]
+
+    # 111111 OR 000000 DATA:
     all_trx_dropna = all_trx.dropna(axis=0, how="any")
+    all_trx_td_exp = all_trx_dropna[all_trx_dropna["td_device"] == "111111"]
+    all_trx_zy_exp = all_trx_dropna[all_trx_dropna["zy_device"] == "000000"]
+
+    # CAPTURE DATA:
     all_trx_drop11 = all_trx_dropna[all_trx_dropna["td_device"] != "111111"]
     all_trx_drop00 = all_trx_dropna[all_trx_dropna["zy_device"] != "000000"]
+
     # 2. 统计获取数
+    # 2.1 TD:
     td_cap_cnt = pd.pivot_table(all_trx_drop11, values="td_device", index=["plat_date", "prod_id"], aggfunc=len)
+    td_cap_exp = pd.pivot_table(all_trx_td_exp, values="td_device", index=["plat_date", "prod_id"], aggfunc=len)
+    td_cap_null = pd.pivot_table(all_trx_td_null, values="td_device", index=["plat_date", "prod_id"], aggfunc=len)
+
+    # 2.2 ZY:
     zy_cap_cnt = pd.pivot_table(all_trx_drop00, values="zy_device", index=["plat_date", "prod_id"], aggfunc=len)
+    zy_cap_exp = pd.pivot_table(all_trx_zy_exp, values="zy_device", index=["plat_date", "prod_id"], aggfunc=len)
+    zy_cap_null = pd.pivot_table(all_trx_zy_null, values="zy_device", index=["plat_date", "prod_id"], aggfunc=len)
 
     # 3. 重置索引
     trx_cnt = trx_cnt.reset_index()
+
+    # TD:
     td_cap_cnt = td_cap_cnt.reset_index()
+    td_cap_cnt.rename(columns={"td_device": "td_cap_cnt"}, inplace=True)
+    td_cap_exp = td_cap_exp.reset_index()
+    td_cap_exp.rename(columns={"td_device": "td_cap_exp"}, inplace=True)
+    td_cap_null = td_cap_null.reset_index()
+    td_cap_null.rename(columns={"td_device": "td_cap_null"}, inplace=True)
+
+    # ZY:
     zy_cap_cnt = zy_cap_cnt.reset_index()
+    zy_cap_cnt.rename(columns={"zy_device": "zy_cap_cnt"}, inplace=True)
+    zy_cap_exp = zy_cap_exp.reset_index()
+    zy_cap_exp.rename(columns={"zy_device": "zy_cap_exp"}, inplace=True)
+    zy_cap_null = zy_cap_null.reset_index()
+    zy_cap_null.rename(columns={"zy_device": "zy_cap_null"}, inplace=True)
 
     # 4. 合并DF
+    # 4.1 TD:
+
     if len(td_cap_cnt) == 0:
         merge_td = trx_cnt
         merge_td["td_device"] = 0
-        logger.info("merge_td %s \n" % merge_td)
+        # logger.info("merge_td %s \n" % merge_td)
     else:
         merge_td = pd.merge(trx_cnt, td_cap_cnt, how="left", on=["plat_date", "prod_id"])
 
+    if len(td_cap_exp) == 0:
+        merge_td["td_cap_exp"] = 0
+    else:
+        merge_td = pd.merge(merge_td, td_cap_exp, how="left", on=["plat_date", "prod_id"])
+
+    if len(td_cap_null) == 0:
+        merge_td["td_cap_null"] = 0
+    else:
+        merge_td = pd.merge(merge_td, td_cap_null, how="left", on=["plat_date", "prod_id"])
+    # merge_td.fillna(0, inplace=True)
+    # logger.info(merge_td)
+
+
+
+    # 4.2 ZY:
     if len(zy_cap_cnt) == 0:
         merge_zy = merge_td
         merge_zy["zy_device"] = 0
-        logger.info("merge_zy %s \n" %  merge_zy)
     else:
         merge_zy = pd.merge(merge_td, zy_cap_cnt, how="left", on=["plat_date", "prod_id"])
-    merge_zy.rename(columns={"td_device": "td_cap_cnt", "zy_device": "zy_cap_cnt"}, inplace=True)
 
+    if len(zy_cap_exp) == 0:
+        merge_zy["zy_cap_exp"] = 0
+    else:
+        merge_zy = pd.merge(merge_zy, zy_cap_exp, how="left", on=["plat_date", "prod_id"])
+
+    if len(zy_cap_null) == 0:
+        merge_zy["zy_cap_null"] = 0
+    else:
+        merge_zy = pd.merge(merge_zy, zy_cap_null, how="left", on=["plat_date", "prod_id"])
+    merge_zy.fillna(0, inplace=True)
+    logger.info("----->>>>>merge_zy =  %s" % len(merge_zy))
     return merge_zy
 
 
@@ -293,7 +356,7 @@ def get_ds_cap_rate(parm_csv_floder, parm_csv_file_list):
     for csv_file in parm_csv_file_list:
         # 1. 获取CSV文件路径
         csv_file_path = os.path.join("%s%s%s" % (parm_csv_floder, "/", csv_file))
-        # csv_file_path = "E:/myself/VBA/csv_files/source\ds/0427-0503/DS_0427-0503_094955.csv"
+        # csv_file_path = "E:/myself/VBA/csv_files/source/ds/0629-0705_test/180706135400__P1310000.csv"
 
         # 2. 读取CSV文件
         reader = pd.read_csv(csv_file_path, encoding="gbk", chunksize=5000, iterator=True, dtype=str)
@@ -315,7 +378,7 @@ def init():
     global TO_BE_BUSI_TYPE, TO_BE_CSV_FLODER
     # TO_BE_BUSI_TYPE: CS, CW, DS
     TO_BE_BUSI_TYPE = "DS"
-    TO_BE_CSV_FLODER = "E://myself//VBA//csv_files//source//ds//0601-0607"
+    TO_BE_CSV_FLODER = "E://myself//VBA//csv_files//source//ds//0803-0809"
 
     logger.info("\n####LOG START####")
     logger.info("\n--------------------------------------------")

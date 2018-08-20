@@ -103,6 +103,40 @@ def get_trx_detail(parm_reader):
     return rtn_df
 
 
+def get_trx_detail_new(parm_reader):
+    # global START_DATE
+    rtn_df = pd.DataFrame({})
+    for chunk in parm_reader:
+        rtn_df = rtn_df.append(chunk)
+    rtn_df.drop(["Unnamed: 15"], axis=1, inplace=True)
+
+    rtn_df.rename(columns={'机构号': 'inst_id'
+        , '机构请求流水': 'inst_trace'
+        , '内部订单号': 'inner_trade_id'
+        , '商户订单号': 'order_id'
+        , '主商户号': 'mer_id'
+        , '下单IP': 'order_ip'
+        , '用户支付IP': 'pay_ip'
+        , '同盾设备指纹': 'td_device'
+        , '证件机构代号': 'id_no'
+        , '扣款（元）': 'trx_amount'
+        , '平台日期': 'plat_date'
+        , '平台时间': 'plat_time'
+        , '手机号': 'mobile_no'
+        , '支付产品编号': 'prod_id'
+        , '收款方姓名/公司名称': 'recv_name'
+        , '持卡人': 'card_holder'}, inplace=True)
+    rtn_df["batch_no"] = time.strftime("%Y%m%d%H%M%S")
+    rtn_df['trx_amount'] = rtn_df['trx_amount'].astype(float)
+    rtn_df['trx_amount'] = rtn_df['trx_amount'] / 100
+    # logger.info(rtn_df.tail())
+    # logger.info("ALL rtn_df.shape = ", rtn_df.shape)
+    rtn_df["plat_date"] = pd.to_datetime(rtn_df["plat_date"])
+    # rtn_df = rtn_df[(rtn_df["plat_date"] >= conf.START_DATE) & (rtn_df["plat_date"] <= conf.END_DATE)]
+
+    return rtn_df
+
+
 def create_node(parm_node_1, parm_node_2, parm_relt, parm_line):
     tx = g.begin()
     # parm_line = [mer_id, dimension, weight]
@@ -304,7 +338,8 @@ def data_preproc(parm_csv_folder, parm_csv_file_list):
         reader = pd.read_csv(csv_file_path, encoding='utf-8', chunksize=5000, iterator=True, sep="|", dtype=str)
 
         # 3.  数据处理
-        df_trx_detail = get_trx_detail(reader)
+        # df_trx_detail = get_trx_detail(reader)
+        df_trx_detail = get_trx_detail_new(reader)
         logger.info("SINGLE CHUNK SHAPE:")
         logger.info(df_trx_detail.shape)
         CAP_TRX_CNT = CAP_TRX_CNT + df_trx_detail.shape[0]

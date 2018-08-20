@@ -1,22 +1,19 @@
 # coding:utf-8
 # -*- coding: utf-8 -*-
 
-import csv
 import datetime
 import os
+import shutil
 import sys
+import time
 import tkinter.filedialog as tf
 import tkinter.messagebox as tm
 import traceback
+
 import sqlalchemy as sq
 
-import cs_call
-import cs_warn_mgt
-import ds_stat
-import td_cust_trx
 import docs.conf.conf as conf
-import shutil
-import time
+import riskproject.real.ds_stat as ds_stat
 
 
 def get_csv_floder():
@@ -26,7 +23,8 @@ def get_csv_floder():
     # file_path = tf.askopenfilename(title=u"选择文件CSV文件", filetypes=[("csv files", "*.csv"), ("all files", "*")],
     #                                initialdir=(os.path.expanduser(default_dir)),
     #                                initialfile='')
-    csv_floder = tf.askdirectory(title=u"选择文件CSV文件夹", initialdir=(os.path.expanduser(default_dir)))
+    # csv_floder = tf.askdirectory(title=u"选择文件CSV文件夹", initialdir=(os.path.expanduser(default_dir)))
+    csv_floder = "E:\myself\VBA\csv_files\source\ds\0427-0503"
     if len(csv_floder) != 0:
         csv_biz_type = csv_floder.split('/')[-1]
         print('csv_biz_type = ', csv_biz_type)
@@ -107,8 +105,9 @@ def main_process(parm_csv_floder):
         Raises:
           IOError: An error occurred accessing the bigtable.Table object.
         """
-    csv_file_list = os.listdir(parm_csv_floder)
-    print('csv_file_list = ', csv_file_list)
+    csv_file_list = ["1"]
+    # print('csv_file_list = ', csv_file_list)
+    csv_biz_type = "ds_stat"
     if csv_biz_type == conf.CS:  # cs_call
         # cs_call_rst = cs_call.get_cs_call(csv_floder, csv_file_list)
         # insert_db(cs_call_rst, 'cs_call')
@@ -119,12 +118,14 @@ def main_process(parm_csv_floder):
         backup_csv(csv_floder, csv_file_list, "cs_warn_mgt")
     elif csv_biz_type == conf.DS:  # td_cust_trx_hist & ds_cap_rate & ds_recg_rate
         # trx_rst = td_cust_trx.get_cust_trx_hist(csv_floder, csv_file_list)
-        # cap_rst = ds_stat.get_ds_cap_rate(csv_floder, csv_file_list)
-        # recg_rst = ds_stat.get_ds_recg_rate(csv_floder, csv_file_list)
+        cap_rst = ds_stat.get_ds_cap_rate(csv_floder, csv_file_list)
+        recg_rst = ds_stat.get_ds_recg_rate(csv_floder, csv_file_list)
+        print("cap_rst#############\n",cap_rst)
+        print("recg_rst###########\n",recg_rst)
         # insert_db(trx_rst, 'td_cust_trx_hist')
         # insert_db(cap_rst, 'ds_cap_rate')
         # insert_db(recg_rst, 'ds_recg_rate')
-        backup_csv(csv_floder, csv_file_list, "ds_stat")
+        # backup_csv(csv_floder, csv_file_list, "ds_stat")
     print('Main Processing Have Done...')
 
 
