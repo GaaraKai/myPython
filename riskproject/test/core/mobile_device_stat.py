@@ -61,7 +61,7 @@ def get_trx_detail(parm_reader):
         , '主商户号': 'mer_id'
         , '下单IP': 'order_ip'
         , '用户支付IP': 'pay_ip'
-        , '同盾设备指纹': 'td_device'
+        , '自研设备指纹': 'td_device'
         , '证件机构代号': 'id_no'
         , '扣款（元）': 'trx_amount'
         , '平台日期': 'plat_date'
@@ -216,7 +216,7 @@ def data_preproc(parm_csv_folder, parm_csv_file_list):
         # 1. 获取CSV文件路径
         csv_file_path = os.path.join('%s%s%s' % (parm_csv_folder, '/', csv_file))
         logger.info("csv_file_path = %s" % csv_file_path)
-        # csv_file_path = "D:/github_program/myPython/docs/csvfiles/201801/td_device_201801"
+        csv_file_path = "C:/Users/wangrongkai/Desktop/移动端设备指纹分析/180228111833.csv"
         # csv_file_path = "D:/github_program/myPython/docs/csvfiles/todo_td/NO 1_td_1"
 
         # 2. 读取CSV文件

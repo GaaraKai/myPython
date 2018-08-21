@@ -7,11 +7,14 @@ import sys
 import time
 import tkinter.filedialog as tf
 import tkinter.messagebox as tm
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+
 
 import numpy as np
 import pandas as pd
 
-from riskproject.real import config
+from riskproject.test.core import config
 
 
 class Logger:
@@ -52,32 +55,53 @@ def get_trx_detail(parm_reader):
     rtn_df = pd.DataFrame({})
     for chunk in parm_reader:
         rtn_df = rtn_df.append(chunk)
-    rtn_df.drop(["Unnamed: 15"], axis=1, inplace=True)
-
-    rtn_df.rename(columns={'机构号': 'inst_id'
-        , '机构请求流水': 'inst_trace'
-        , '内部订单号': 'inner_trade_id'
-        , '商户订单号': 'order_id'
-        , '主商户号': 'mer_id'
-        , '下单IP': 'order_ip'
-        , '用户支付IP': 'pay_ip'
-        , '同盾设备指纹': 'td_device'
-        , '证件机构代号': 'id_no'
-        , '扣款（元）': 'trx_amount'
-        , '平台日期': 'plat_date'
-        , '平台时间': 'plat_time'
-        , '手机号': 'mobile_no'
-        , '支付产品编号': 'prod_id'
-        , '收款方姓名/公司名称': 'recv_name'
-        , '持卡人': 'card_holder'}, inplace=True)
-    rtn_df["batch_no"] = time.strftime("%Y%m%d%H%M%S")
-    rtn_df['trx_amount'] = rtn_df['trx_amount'].astype(float)
-    rtn_df['trx_amount'] = rtn_df['trx_amount'] / 100
-    # logger.info(rtn_df.tail())
-    # logger.info("ALL rtn_df.shape = ", rtn_df.shape)
+    rtn_df.drop(["INSTID"], axis=1, inplace=True)
+    rtn_df.drop(["TRADENO"], axis=1, inplace=True)
+    rtn_df.drop(["ORDERID"], axis=1, inplace=True)
+    rtn_df.drop(["MERID"], axis=1, inplace=True)
+    rtn_df.drop(["USERMERIP"], axis=1, inplace=True)
+    rtn_df.drop(["USERUMPIP"], axis=1, inplace=True)
+    rtn_df.drop(["TD_DEVICEID"], axis=1, inplace=True)
+    rtn_df.drop(["ZY_DEVICEID"], axis=1, inplace=True)
+    rtn_df.drop(["IDENTIFYCODE"], axis=1, inplace=True)
+    # rtn_df.drop(["PAYSTATE"], axis=1, inplace=True)
+    rtn_df.drop(["MOBILEID"], axis=1, inplace=True)
+    rtn_df.drop(["PRODUCTID"], axis=1, inplace=True)
+    rtn_df.drop(["CARDHOLDER"], axis=1, inplace=True)
+    rtn_df.drop(["BACK_UP3"], axis=1, inplace=True)
+    rtn_df.drop(["UPDATE_TIME"], axis=1, inplace=True)
+    rtn_df.drop(["Unnamed: 21"], axis=1, inplace=True)
+    rtn_df.rename(columns={
+          # "INSTID": "inst_id"
+         "TRACE": "inst_trace"
+        # , "TRADENO": "inner_trade_id"
+        # , "ORDERID": "order_id"
+        # , "MERID": "mer_id"
+        # , "USERMERIP": "order_ip"
+        # , "USERUMPIP": "pay_ip"
+        # , "TD_DEVICEID": "td_device"
+        # , "ZY_DEVICEID": "zy_device"
+        # , "IDENTIFYCODE": "id_no"
+        , "AMOUNT": "trx_amount"
+        , "PLATDATE": "plat_date"
+        , "PLATTIME": "plat_time"
+        , "PAYSTATE": "pay_status"
+        # , "MOBILEID": "mobile_no"
+        # , "PRODUCTID": "  prod_id"
+        # , "CARDHOLDER": "card_holder"
+        , "MERCH_INDUSTRY": "mer_idst"
+        , "RISK_LEVEL": "risk_lvl"
+        # , "BACK_UP3": "sale_nm"
+        # , "UPDATE_TIME": "update_time"
+        }, inplace=True)
+    # logger.info(rtn_df.dtypes)
     rtn_df["plat_date"] = pd.to_datetime(rtn_df["plat_date"])
     rtn_df = rtn_df[(rtn_df["plat_date"] >= conf.START_DATE) & (rtn_df["plat_date"] <= conf.END_DATE)]
-
+    # logger.info(rtn_df)
+    rtn_df = rtn_df[rtn_df["pay_status"] == "0"]
+    # rtn_df = rtn_df[rtn_df["mer_idst"] == "4"]
+    rtn_df["trx_amount"] = rtn_df["trx_amount"].astype("float64")
+    rtn_df["trx_amount"] = rtn_df["trx_amount"]*1000
     return rtn_df
 
 
@@ -173,30 +197,83 @@ def susp_mer_stat(parm_rst):
     del parm_rst
 
 
+def mer_idst_stat(parm_rst):
+    logger.info("****MERCHANT INDUSTRY ANALYSIS BEGIN****")
+    logger.info("[1]. REPLACE MERCHANT INDUSTRY VALUE:")
+    parm_rst["mer_idst"].replace(idst_conf.mer_idst_dict,inplace=True)
+    logger.info("==>> FINISHED...")
+
+    logger.info("[2]. FIND MERCHANT INDUSTRY LIST:")
+    mer_idst_list = pd.Series(parm_rst["mer_idst"].unique()).tolist()
+    if len(mer_idst_list) == 0:
+        logger.info("NO INDUSTRY INFORMATION, PLEASE CHECK AGAIN.")
+    else:
+        logger.info("==>> MERCHANT INDUSTRY LIST COUNT: %s" % len(mer_idst_list))
+        logger.info("==>> MERCHANT INDUSTRY LIST DETAILS: %s" % mer_idst_list)
+        logger.info("[3]. FIND TRANSACTION COUNT BY INDUSTRY[TOP5]:")
+        mer_with_trx_cnt = pd.pivot_table(parm_rst, index=["mer_idst"], values=["inst_trace"], aggfunc=len) \
+            .sort_values(by='inst_trace', axis=0, ascending=False).reset_index()
+        mer_with_trx_cnt.rename(columns={"inst_trace": "trx_cnt"}, inplace=True)
+        logger.info(mer_with_trx_cnt.head())
+
+        logger.info("[4]. FIND TRANSACTION AMOUNT BY INDUSTRY[TOP5]:")
+        mer_with_trx_amt = pd.pivot_table(parm_rst, index=["mer_idst"], values=["trx_amount"],
+                                                aggfunc=np.sum) \
+            .sort_values(by='trx_amount', axis=0, ascending=False).reset_index()
+        mer_with_trx_amt["trx_amount"] = round(mer_with_trx_amt["trx_amount"],2)
+        logger.info(mer_with_trx_amt.head())
+
+        logger.info("[5]. MERGE TRANSACTION COUNT & AMOUNT BY INDUSTRY[TOP5]:")
+        merge_rst = pd.merge(mer_with_trx_cnt, mer_with_trx_amt, how='inner', on=['mer_idst'])
+        logger.info(merge_rst)
+        # mer_idst_list = ["6"]
+        # logger.info(mer_idst_list)
+
+        logger.info("[6]. SAVE SINGLE INDUSTRY ANALYSIS RESULT:")
+        all_daily_trx_cnt = pd.DataFrame({})
+        for single_idst in mer_idst_list:
+            single_idst_df = parm_rst[parm_rst["mer_idst"] == single_idst]
+            daily_trx_cnt = pd.pivot_table(single_idst_df, index=["plat_date"], values=["trx_amount"],
+                                           aggfunc=[len,np.sum]).reset_index()
+            daily_trx_cnt.columns = ["plat_date","trx_cnt", "trx_amt"]
+            daily_trx_cnt["trx_cnt"] = round(daily_trx_cnt["trx_cnt"],0)
+            daily_trx_cnt["trx_amt"] = round(daily_trx_cnt["trx_amt"]/10000,2)
+            daily_trx_cnt["mer_idst"] = single_idst
+            logger.info("==>> INDUSTRY: %s, COUNT: %s" % (single_idst,len(daily_trx_cnt)))
+            all_daily_trx_cnt = all_daily_trx_cnt.append(daily_trx_cnt)
+            del daily_trx_cnt
+        all_daily_trx_cnt.sort_values(by='mer_idst', axis=0, ascending=False).reset_index()
+        # logger.info(all_daily_trx_cnt)
+        idst_daily_trx_cnt_path = conf.RESULT_PATH + "indu_catg_anls/all_daily_trx_cnt.csv"
+        logger.info("SAVE TO: %s" % idst_daily_trx_cnt_path)
+        all_daily_trx_cnt.to_csv(idst_daily_trx_cnt_path, index=False)
+    logger.info("****MERCHANT INDUSTRY ANALYSIS  END****")
+    del parm_rst
+
+
 def overall_rpt(parm_rst):
     global CAP_TRX_CNT, TOT_TRX_AMT
-    # date_range = 31
     logger.info("****OVERALL REPORT START****")
     logger.info("[1]. TOTAL DATA SHAPE:")
     logger.info(parm_rst.shape)
     logger.info("[2]. STATISTICS RANGE: FROM %s TO %s" % (conf.START_DATE, conf.END_DATE))
-    total_trx_amount = round(TOT_TRX_AMT / 1000000000, 2)
+    total_trx_amount = round(TOT_TRX_AMT / 100000, 2)
     logger.info("[3]. TOTAL TRANSACTION COUNT: %s" % CAP_TRX_CNT)
     logger.info("[4]. TOTAL TRANSACTION AMOUNT: %s BILLION" % total_trx_amount)
-    mer_id_cnt = np.array(parm_rst["mer_id"].unique())
-    prod_id_cnt = pd.DataFrame(np.array(parm_rst["prod_id"].unique()).tolist()).dropna(axis=0, how='any').size
-    device_id_cnt = pd.DataFrame(np.array(parm_rst["td_device"].unique()).tolist()).dropna(axis=0, how='any').size
-    device_id_cnt_daily = round(device_id_cnt / conf.DATE_RANGE, 2)
-    logger.info("[5]. TOTAL MERCHANT COUNT: %s" % mer_id_cnt.size)
+    # mer_id_cnt = np.array(parm_rst["mer_id"].unique())
+    mer_idst_cnt = pd.DataFrame(np.array(parm_rst["mer_idst"].unique()).tolist()).dropna(axis=0, how='any').size
+    risk_lvl_cnt = pd.DataFrame(np.array(parm_rst["risk_lvl"].unique()).tolist()).dropna(axis=0, how='any').size
+    # device_id_cnt_daily = round(device_id_cnt / conf.DATE_RANGE, 2)
+    # logger.info("[5]. TOTAL MERCHANT COUNT: %s" % mer_id_cnt.size)
     mer_id_details_path = conf.RESULT_PATH + "mer_id_details" + ".csv"
     # pd.DataFrame(rst["mer_id"].value_counts()).reset_index().head(10).to_csv(mer_id_details_path, index=False)
     logger.info("TOP10 MERCHANT COUNT DETAILS SAVE TO %s" % mer_id_details_path)
-    logger.info("[6]. TOTAL PRODUCT COUNT: %s" % prod_id_cnt)
+    logger.info("[6]. TOTAL mer_idst_cnt: %s" % mer_idst_cnt)
     prod_id_details_path = conf.RESULT_PATH + "prod_id_details" + ".csv"
     # pd.DataFrame(rst["prod_id"].value_counts()).reset_index().to_csv(prod_id_details_path, index=False)
     logger.info("PRODUCT COUNT DETAILS SAVE TO: %s" % prod_id_details_path)
-    logger.info("[7]. TOTAL DEVICE CAPTURE COUNT: %s" % device_id_cnt)
-    logger.info("[8]. DAILY DEVICE CAPTURE COUNT: %s" % device_id_cnt_daily)
+    logger.info("[7]. TOTAL risk_lvl_cntT: %s" % risk_lvl_cnt)
+    # logger.info("[8]. DAILY DEVICE CAPTURE COUNT: %s" % device_id_cnt_daily)
     td_device_details_path = conf.RESULT_PATH + "td_device_details" + ".csv"
     # pd.DataFrame(rst["td_device"].value_counts()).reset_index().head(10).to_csv(td_device_details_path, index=False)
     logger.info("TOP10 DEVICE COUNT DETAILS SAVE TO %s" % td_device_details_path)
@@ -216,7 +293,8 @@ def data_preproc(parm_csv_folder, parm_csv_file_list):
         # 1. 获取CSV文件路径
         csv_file_path = os.path.join('%s%s%s' % (parm_csv_folder, '/', csv_file))
         logger.info("csv_file_path = %s" % csv_file_path)
-        # csv_file_path = "D:/github_program/myPython/docs/csvfiles/201801/td_device_201801"
+        # csv_file_path = "D:/github_program/myPython/docs/csvfiles/indu_catg_anls/NO 1_1_1"
+        # csv_file_path = "D:/github_program/myPython/docs/csvfiles/indu_catg_anls/test.txt"
         # csv_file_path = "D:/github_program/myPython/docs/csvfiles/todo_td/NO 1_td_1"
 
         # 2. 读取CSV文件
@@ -254,7 +332,8 @@ def create_rpt(parm_rst):
     if len(parm_rst) != 0:
         logger.info("--------------------------------------------")
         # 1. OVERALL REPORT
-        overall_rpt(parm_rst)
+        # overall_rpt(parm_rst)
+        mer_idst_stat(parm_rst)
         logger.info("--------------------------------------------")
         # 2. SUSPICIOUS DEVICE ANALYSIS
         # susp_device_stat(parm_rst)
@@ -264,6 +343,28 @@ def create_rpt(parm_rst):
     else:
         logger.info("parm_rst IS NULL, WRONG...")
     del parm_rst
+
+
+def create_graph(parm_rst):
+    parm_rst = pd.read_csv('C:/Users/wangrongkai/Desktop/111/test.csv', encoding='gbk')
+    parm_rst["日期"] = pd.to_datetime(parm_rst["日期"])
+    print(parm_rst.head())
+    stem_cats = parm_rst.columns.tolist()
+    fig = plt.figure(figsize=(20, 9))
+    for sp in range(1, len(stem_cats)):
+        ax = fig.add_subplot(3, 5, sp)
+        ax.plot(parm_rst['日期'], parm_rst[stem_cats[sp]], linewidth=2)
+        for key, spine in ax.spines.items():
+            spine.set_visible(False)
+        ax.tick_params(bottom="off", top="off", left="off", right="off")
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+        ax.set_title(stem_cats[sp], fontsize=15)
+        # plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
+    plt.gcf().autofmt_xdate()
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    plt.rcParams['axes.unicode_minus'] = False
+    plt.subplots_adjust(top=0.9, bottom=0.1, left=0.05, right=0.98)
+    plt.show()
 
 
 def main_process(parm_csv_folder):
@@ -299,14 +400,18 @@ def init():
     logger.info("DATE RANGE: %s" % conf.DATE_RANGE)
     logger.info("ID HURDLE: %s" % conf.ID_HURDLE)
     logger.info("TRX HURDLE: %s" % conf.TRX_HURDLE)
+    logger.info(idst_conf.mer_idst_dict)
     logger.info("--------------------------------------------")
 
 
 if __name__ == '__main__':
     start_time = datetime.datetime.now()
     conf = config.DeviceConfig()
+    idst_conf = config.MerIndustryConfig
     logger = Logger(path=conf.LOG_PATH)
     init()
+    create_graph(1)
+    sys.exit(0)
     csv_folder = get_csv_folder()
     logger.info('CSV FILES FOLDER: %s' % csv_folder)
     main_process(csv_folder)

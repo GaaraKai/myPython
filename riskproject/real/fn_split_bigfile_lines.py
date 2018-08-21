@@ -8,6 +8,7 @@ def mkSubFile(lines, head, srcName, sub):
     filename = des_filename + '_' + str(sub) + extname
     print('make file: %s' % filename)
     fout = open(filename, encoding='utf-8',mode='w')
+    # fout = open(filename, encoding='gbk', mode='w')
     try:
         fout.writelines([head])
         fout.writelines(lines)
@@ -18,6 +19,8 @@ def mkSubFile(lines, head, srcName, sub):
 
 def splitByLineCount(filename, count):
     fin = open(filename, encoding='utf-8',mode='r')
+    # fin = open(filename, encoding='gbk', mode='r')
+
     try:
         head = fin.readline()
         buf = []
@@ -35,7 +38,7 @@ def splitByLineCount(filename, count):
 
 if __name__ == '__main__':
     start_time = datetime.datetime.now()
-    big_file_path = "D:\\github_program\\myPython\\docs\\csvfiles\\ds_anliysis\\NO 1_td"
+    big_file_path = "D:/github_program/myPython/docs/source/20180809_test.OUT"
     split_line = 500000
     splitByLineCount(big_file_path, split_line)
     end_time = datetime.datetime.now()
